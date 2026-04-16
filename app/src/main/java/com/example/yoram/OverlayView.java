@@ -9,23 +9,16 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.drawable.Drawable;
 import android.os.Handler;
-import android.os.Looper;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.View;
-import android.widget.ShareActionProvider;
 
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
-import androidx.lifecycle.ViewModelProvider;
-import androidx.lifecycle.ViewModelStoreOwner;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -39,7 +32,7 @@ public class OverlayView extends View {
     public String[] yoga_array = {"전사자세", "다리당기기", "코브라자세"};
     private HashMap<String, String> yogamap;
     public ArrayList<Integer> yoga_id_array = new ArrayList<>(Arrays.asList(
-            R.drawable.warrior,
+            R.drawable.warrior1,
             R.drawable.for_back_pose,
             R.drawable.cobra_pose
     ));

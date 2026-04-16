@@ -4,6 +4,9 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 
 import android.graphics.Bitmap;
@@ -21,13 +24,16 @@ import androidx.fragment.app.Fragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import com.google.mediapipe.tasks.components.containers.NormalizedLandmark;
 import com.google.mediapipe.tasks.vision.poselandmarker.PoseLandmarkerResult;
 
 import java.lang.reflect.Type;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
-public class MainActivity extends AppCompatActivity implements MideaPipePosepredict.PoseLandmarkerListener{
+public class MainActivity extends AppCompatActivity{
 
     BottomNavigationView bottomNavigationView;
     Fragment homeFragment, mypageFragment, settingFragment;
@@ -35,7 +41,9 @@ public class MainActivity extends AppCompatActivity implements MideaPipePosepred
     YogaClassifier yogaClassifier;
     FrameLayout imagelayout;
     ImageView bitmapimageview;
-    MideaPipePosepredict mideaPipePosepredict;
+
+
+    PoseClassifier poseClassifier;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -89,15 +97,12 @@ public class MainActivity extends AppCompatActivity implements MideaPipePosepred
                 }
                 return false;
             }
+
         });
-//        imagelayout = findViewById(R.id.image_layout);
-//        bitmapimageview = findViewById(R.id.bitmapimageview);
-//        yogaClassifier = new YogaClassifier(this);
-//        Bitmap bitmap = yogaClassifier.TestClassifier();
-//        bitmapimageview.setImageBitmap(bitmap);
-        Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.warrior2);
-        mideaPipePosepredict = new MideaPipePosepredict(this,this,1);
-        mideaPipePosepredict.detectLiveStream(bitmap);
+
+
+        poseClassifier = new PoseClassifier(this); // 포즈 인식
+        poseClassifier.run();
 
     }
 
@@ -124,15 +129,7 @@ public class MainActivity extends AppCompatActivity implements MideaPipePosepred
         return new HashMap<>();
     }
 
-    @Override
-    public void onResult(PoseLandmarkerResult result, int imageWidth, int imageHeight) {
-        Log.d("결과 수신: ", String.valueOf(result));
-        Log.d("이미지 가로: ", String.valueOf(imageWidth));
-        Log.d("이미지 세로: ", String.valueOf(imageHeight));
     }
 
-    @Override
-    public void onError(String error) {
-        Log.d("결과 수신 실패: ", error);
-    }
-}
+
+
