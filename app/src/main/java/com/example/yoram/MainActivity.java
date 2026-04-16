@@ -5,9 +5,14 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import java.util.Calendar;
+
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.MenuItem;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -16,16 +21,21 @@ import androidx.fragment.app.Fragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import com.google.mediapipe.tasks.vision.poselandmarker.PoseLandmarkerResult;
 
 import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements MideaPipePosepredict.PoseLandmarkerListener{
 
     BottomNavigationView bottomNavigationView;
     Fragment homeFragment, mypageFragment, settingFragment;
-
+    YogaActivity yogaActivity;
+    YogaClassifier yogaClassifier;
+    FrameLayout imagelayout;
+    ImageView bitmapimageview;
+    MideaPipePosepredict mideaPipePosepredict;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -80,8 +90,17 @@ public class MainActivity extends AppCompatActivity {
                 return false;
             }
         });
+//        imagelayout = findViewById(R.id.image_layout);
+//        bitmapimageview = findViewById(R.id.bitmapimageview);
+//        yogaClassifier = new YogaClassifier(this);
+//        Bitmap bitmap = yogaClassifier.TestClassifier();
+//        bitmapimageview.setImageBitmap(bitmap);
+        Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.warrior2);
+        mideaPipePosepredict = new MideaPipePosepredict(this,this,1);
+        mideaPipePosepredict.detectLiveStream(bitmap);
 
     }
+
     // 데이터를 SharedPreferences에 저장하는 메서드
     private void saveDataInSharedPreferences(String key, Object value) {
         SharedPreferences pref;
@@ -103,5 +122,17 @@ public class MainActivity extends AppCompatActivity {
             return gson.fromJson(json, type);
         }
         return new HashMap<>();
+    }
+
+    @Override
+    public void onResult(PoseLandmarkerResult result, int imageWidth, int imageHeight) {
+        Log.d("결과 수신: ", String.valueOf(result));
+        Log.d("이미지 가로: ", String.valueOf(imageWidth));
+        Log.d("이미지 세로: ", String.valueOf(imageHeight));
+    }
+
+    @Override
+    public void onError(String error) {
+        Log.d("결과 수신 실패: ", error);
     }
 }

@@ -1,7 +1,9 @@
 package com.example.yoram;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
@@ -11,7 +13,10 @@ import android.widget.LinearLayout;
 import androidx.appcompat.app.AppCompatActivity;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 public class YogaSellectActivity extends AppCompatActivity {
 
@@ -19,7 +24,8 @@ public class YogaSellectActivity extends AppCompatActivity {
     private LinearLayout list2;
     private LinearLayout list3;
     private LinearLayout list4;
-
+    private final Set<String> selectedpose = new LinkedHashSet<>();
+    private  SharedPreferences prefs;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -37,6 +43,7 @@ public class YogaSellectActivity extends AppCompatActivity {
         Button hipJointButton = findViewById(R.id.hip_joint_button);
         Button legButton = findViewById(R.id.leg_button);
 
+        prefs = getSharedPreferences("yoga", MODE_PRIVATE);
         // Set click listeners to your buttons
         neckButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -52,6 +59,7 @@ public class YogaSellectActivity extends AppCompatActivity {
                 }
             }
         });
+
         waistButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -96,14 +104,14 @@ public class YogaSellectActivity extends AppCompatActivity {
         });
 
         // For neck actions
-        setClickListener((ImageButton) findViewById(R.id.neckact1), (ImageView) findViewById(R.id.neckact1), new boolean[]{false});
-        setClickListener((ImageButton) findViewById(R.id.neckact2), (ImageView) findViewById(R.id.neckact2), new boolean[]{false});
+        setClickListener((ImageButton) findViewById(R.id.cat_pose), (ImageView) findViewById(R.id.cat_pose), new boolean[]{false});
+        setClickListener((ImageButton) findViewById(R.id.for_back_pose), (ImageView) findViewById(R.id.for_back_pose), new boolean[]{false});
         setClickListener((ImageButton) findViewById(R.id.neckact3), (ImageView) findViewById(R.id.neckact3), new boolean[]{false});
 
 // For waist actions
         setClickListener((ImageButton) findViewById(R.id.waistact1), (ImageView) findViewById(R.id.waistact1), new boolean[]{false});
         setClickListener((ImageButton) findViewById(R.id.waistact2), (ImageView) findViewById(R.id.waistact2), new boolean[]{false});
-        setClickListener((ImageButton) findViewById(R.id.waistact3), (ImageView) findViewById(R.id.waistact3), new boolean[]{false});
+        setClickListener((ImageButton) findViewById(R.id.cobra_pose), (ImageView) findViewById(R.id.cobra_pose), new boolean[]{false});
 
 // For hip joint actions
         setClickListener((ImageButton) findViewById(R.id.hipjointact1), (ImageView) findViewById(R.id.hipjointact1), new boolean[]{false});
@@ -111,14 +119,16 @@ public class YogaSellectActivity extends AppCompatActivity {
         setClickListener((ImageButton) findViewById(R.id.hipjointact3), (ImageView) findViewById(R.id.hipjointact3), new boolean[]{false});
 
 // For leg actions
-        setClickListener((ImageButton) findViewById(R.id.legact1), (ImageView) findViewById(R.id.legact1), new boolean[]{false});
+        setClickListener((ImageButton) findViewById(R.id.warrior), (ImageView) findViewById(R.id.warrior), new boolean[]{false});
         setClickListener((ImageButton) findViewById(R.id.legact2), (ImageView) findViewById(R.id.legact2), new boolean[]{false});
         setClickListener((ImageButton) findViewById(R.id.legact3), (ImageView) findViewById(R.id.legact3), new boolean[]{false});
         ImageButton backButton = findViewById(R.id.back_button);
 
+
         backButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                selectedpose.clear();
                 finish();
             }
         });
@@ -126,17 +136,29 @@ public class YogaSellectActivity extends AppCompatActivity {
 
     private void setClickListener(ImageButton button, ImageView image, final boolean[] isChecked) {
         // Initially setting the image as empty
-        isChecked[0] = false;
+
         image.setImageDrawable(null);
+
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                isChecked[0] = !isChecked[0]; // Toggle the state
+                isChecked[0] = !isChecked[0]; // Toggle the state // 위에 세팅 된거 보면 무조건 false임 그래서 true로 만들어준 듯
 
                 if (isChecked[0]) {
                     image.setImageResource(R.drawable.clickicon); // Set the check image
+                    selectedpose.add(getResources().getResourceEntryName(button.getId()));
+                    prefs.edit().clear();
+                    prefs.edit().putStringSet("pose",selectedpose).apply();
+                    Log.d("자세 리스트", String.valueOf(selectedpose));
+                    Log.d("선택된 자세", String.valueOf(prefs.getStringSet("pose", new LinkedHashSet<>())));
                 } else {
                     image.setImageDrawable(null); // Remove the image
+                    selectedpose.remove(getResources().getResourceEntryName(button.getId()));
+
+                    prefs.edit().clear();
+                    prefs.edit().putStringSet("pose", selectedpose).apply();
+                    Log.d("자세 리스트", String.valueOf(selectedpose));
+                    Log.d("선택된 자세", String.valueOf(prefs.getStringSet("pose", new LinkedHashSet<>())));
                 }
             }
         });
@@ -163,5 +185,8 @@ public class YogaSellectActivity extends AppCompatActivity {
         list4.setVisibility(View.GONE);
 
         layoutToShow.setVisibility(View.VISIBLE);
+    }
+    private interface PoseinfoCallback{
+        void onCallback(String PoseName);
     }
 }
