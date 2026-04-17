@@ -33,7 +33,7 @@ public class OverlayView extends View {
     private HashMap<String, String> yogamap;
     public ArrayList<Integer> yoga_id_array = new ArrayList<>(Arrays.asList(
             R.drawable.warrior1,
-            R.drawable.for_back_pose,
+            R.drawable.for_back7,
             R.drawable.cobra_pose
     ));
     private Integer yoga_image;
