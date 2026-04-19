@@ -1,6 +1,7 @@
 package com.example.yoram;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -50,6 +51,7 @@ public class YogaActivity extends AppCompatActivity {
     private String targetPoseName = "stand"; // 목표 요가 자세 이름
     YogaViewModel yogaViewModel;
     int current_yoga_id = 0;
+    PoseClassifier poseClassifier;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -63,6 +65,8 @@ public class YogaActivity extends AppCompatActivity {
         } else {
             ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.CAMERA}, CAMERA_PERMISSION_REQUEST_CODE);
         }
+        poseClassifier = new PoseClassifier(this);
+
     }
 
     private MappedByteBuffer loadModelFile(String modelFileName) throws IOException {
@@ -98,6 +102,7 @@ public class YogaActivity extends AppCompatActivity {
         imageAnalysis.setAnalyzer(ContextCompat.getMainExecutor(this), image -> {
             if (System.currentTimeMillis() - lastAnalyzedTimestamp >= 1000) {// 프레임 마다 분석 시도하지만 조건상 1초마다 실행됨
                 Bitmap imageData = convertImageToByteArray(image);// 여기서 image가 1초마다 들어오는 프레임
+//                poseClassifier.run(imageData);
                 String poseName = runInference(imageData);// runInference가 자세 인식하는거고 여기서 인식 후 posName이 현재 동작해야될 포즈인
                                                         //targetPoseName과 같아야 OverlayView의 남은 초 수를 업데이트 해줌
                 //모델 추론과정이 있기 때문에 비동기로 callback 써서 수정해야할 듯
@@ -249,6 +254,9 @@ public class YogaActivity extends AppCompatActivity {
         if (cameraProvider != null) {
             cameraProvider.unbindAll();
         }
+        SharedPreferences prefs = getSharedPreferences("yoga", MODE_PRIVATE);
+        prefs.edit().clear().apply();
+
     }
 
     @Override
@@ -262,4 +270,6 @@ public class YogaActivity extends AppCompatActivity {
             }
         }
     }
+
+
 }

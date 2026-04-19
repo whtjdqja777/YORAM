@@ -33,7 +33,7 @@ public class OverlayView extends View {
     private HashMap<String, String> yogamap;
     public ArrayList<Integer> yoga_id_array = new ArrayList<>(Arrays.asList(
             R.drawable.warrior1,
-            R.drawable.for_back7,
+            R.drawable.for_back_pose,
             R.drawable.cobra_pose
     ));
     private Integer yoga_image;
@@ -71,9 +71,11 @@ public class OverlayView extends View {
         ArrayList<Integer> tmp_yoga_id_array = new ArrayList<>(yoga_id_array);
         for(Integer yoga_pose_overlay_id : tmp_yoga_id_array){
             pose_name = getResources().getResourceEntryName(yoga_pose_overlay_id);
+
             if (PoseName.contains(pose_name)){
                 PosNameArray.add(pose_name);
             }else{
+                Log.d("yoga_id_poseName", getResources().getResourceEntryName(yoga_pose_overlay_id));
                 yoga_id_array.remove(yoga_pose_overlay_id);
             }
         }

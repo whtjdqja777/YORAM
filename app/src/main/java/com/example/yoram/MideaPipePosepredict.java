@@ -66,17 +66,17 @@ public class MideaPipePosepredict {
 
         PoseLandmarker.PoseLandmarkerOptions options= PoseLandmarker.PoseLandmarkerOptions.builder()
                 .setBaseOptions(baseOptions)
-                .setRunningMode(RunningMode.IMAGE)// LIVE_STREAM, IMAGE, VIDEO 등 추론할 대상 설정
+                .setRunningMode(RunningMode.LIVE_STREAM)// LIVE_STREAM, IMAGE, VIDEO 등 추론할 대상 설정
                 .setNumPoses(1) //탐지할 객체 수
                 .setMinPoseDetectionConfidence(0.5f)// 이 사람이 사람 자세로 검출 됬다는 최소 신뢰도
                 .setMinPosePresenceConfidence(0.5f)// 검출된 자세가 실제로 존재한다는 최소 신뢰도
-//                .setMinTrackingConfidence(0.5f) // 이전 프레임들 참고한 tracking 정보를 활용한 신뢰도
-//                .setResultListener((result, inputImage) -> {
-//                    listener.onResult(result, inputImage.getWidth(), inputImage.getHeight());
-//                })
-//                .setErrorListener(error -> {
-//                    listener.onError(error.getMessage() != null ? error.getMessage():"알 수 없는 에러");
-//                })
+                .setMinTrackingConfidence(0.5f) // 이전 프레임들 참고한 tracking 정보를 활용한 신뢰도
+                .setResultListener((result, inputImage) -> {
+                    listener.onResult(result, inputImage.getWidth(), inputImage.getHeight());
+                })
+                .setErrorListener(error -> {
+                    listener.onError(error.getMessage() != null ? error.getMessage():"알 수 없는 에러");
+                })
                 .build();
 
         try{

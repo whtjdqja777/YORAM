@@ -481,7 +481,7 @@
                     android:textSize="24sp">
                 </TextView>
                 <ImageButton
-                    android:id="@+id/warrior"
+                    android:id="@+id/warrior1"
                     android:layout_width="90dp"
                     android:layout_height="90dp"
                     android:src="@drawable/clickicon"

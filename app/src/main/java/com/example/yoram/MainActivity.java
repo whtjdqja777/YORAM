@@ -42,12 +42,13 @@ public class MainActivity extends AppCompatActivity{
     FrameLayout imagelayout;
     ImageView bitmapimageview;
 
-
+    SharedPreferences prefs;
     PoseClassifier poseClassifier;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
+        prefs = getSharedPreferences("yoga", MODE_PRIVATE);
+        prefs.edit().remove("pose").apply();
         // 첫 시작 여부 확인
         SharedPreferences prefs = getSharedPreferences("PrefName", MODE_PRIVATE);
         boolean isFirstStart = prefs.getBoolean("firstStart", true);
@@ -101,8 +102,8 @@ public class MainActivity extends AppCompatActivity{
         });
 
 
-        poseClassifier = new PoseClassifier(this); // 포즈 인식
-        poseClassifier.run();
+//        poseClassifier = new PoseClassifier(this); // 포즈 인식
+//        poseClassifier.run();
 
     }
 

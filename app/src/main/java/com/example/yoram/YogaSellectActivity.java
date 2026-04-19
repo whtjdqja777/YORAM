@@ -43,7 +43,12 @@ public class YogaSellectActivity extends AppCompatActivity {
         Button hipJointButton = findViewById(R.id.hip_joint_button);
         Button legButton = findViewById(R.id.leg_button);
 
+
         prefs = getSharedPreferences("yoga", MODE_PRIVATE);
+        prefs.edit().remove("pose").apply();
+        Log.d("prefs_pose_on_start", String.valueOf(
+                prefs.getStringSet("pose", new LinkedHashSet<>())
+        ));
         // Set click listeners to your buttons
         neckButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -119,7 +124,7 @@ public class YogaSellectActivity extends AppCompatActivity {
         setClickListener((ImageButton) findViewById(R.id.hipjointact3), (ImageView) findViewById(R.id.hipjointact3), new boolean[]{false});
 
 // For leg actions
-        setClickListener((ImageButton) findViewById(R.id.warrior), (ImageView) findViewById(R.id.warrior), new boolean[]{false});
+        setClickListener((ImageButton) findViewById(R.id.warrior1), (ImageView) findViewById(R.id.warrior1), new boolean[]{false});
         setClickListener((ImageButton) findViewById(R.id.legact2), (ImageView) findViewById(R.id.legact2), new boolean[]{false});
         setClickListener((ImageButton) findViewById(R.id.legact3), (ImageView) findViewById(R.id.legact3), new boolean[]{false});
         ImageButton backButton = findViewById(R.id.back_button);
