@@ -162,4 +162,6 @@ public class OverlayView extends View {
     public String getCurrenPose(){
         return getResources().getResourceEntryName(yoga_image);
     }
+
 }
+

@@ -7,7 +7,11 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.util.Log;
 
+import androidx.camera.core.ImageProxy;
+
+import com.google.mediapipe.framework.image.MPImage;
 import com.google.mediapipe.tasks.components.containers.NormalizedLandmark;
+import com.google.mediapipe.tasks.vision.core.ImageProcessingOptions;
 import com.google.mediapipe.tasks.vision.poselandmarker.PoseLandmarkerResult;
 
 import java.util.ArrayList;
@@ -86,9 +90,12 @@ public class PoseClassifier implements MideaPipePosepredict.PoseLandmarkerListen
     private ArrayList<Float> for_back_angle_list = new ArrayList<>();
     private List<NormalizedLandmark> landmarks;
     private HashMap<String, ArrayList<Float>> Cobra_Angle_HashMap = new HashMap<>();
+    public int success = 0;
+    public int fail = 1;
+    ImageProcessingOptions options;
     public PoseClassifier(Context context){
         this.context = context;
-        mideaPipePosepredict = new MideaPipePosepredict(context,this,1);
+        mideaPipePosepredict = new MideaPipePosepredict(context,this,2);
         AllAngles.put("상체 각도", new ArrayList<>());
         AllAngles.put("하체 각도", new ArrayList<>());
 
@@ -148,16 +155,18 @@ public class PoseClassifier implements MideaPipePosepredict.PoseLandmarkerListen
         Cobra_Angle_HashMap.put("Arm_Angle", new ArrayList<>());
         Cobra_Angle_HashMap.put("Lower_Angle", new ArrayList<>());
         Cobra_Angle_HashMap.put("ratio", new ArrayList<>());
-        
+
+
     }
-    public void run(Bitmap bitmap){
+    public void run(MPImage mpimage, ImageProcessingOptions options){
 
 //        for (Integer test_image : cobra_test_image_list){
 //            Log.d("test_image_name", context.getResources().getResourceEntryName(test_image));
 //            Bitmap bitmap = BitmapFactory.decodeResource(context.getResources(), test_image);
 //            mideaPipePosepredict.detectLiveStream(bitmap);
 //        }
-        mideaPipePosepredict.detectLiveStream(bitmap);
+
+        mideaPipePosepredict.detectLiveStream(mpimage, options);
 //        Log.d("Cobra_whole_body_Angle_MAX",String.valueOf(Collections.max(Cobra_Angle_HashMap.get("Whole_body_Angle"))));
 //        Log.d("Cobra_whole_body_Angle_MIN",String.valueOf(Collections.min(Cobra_Angle_HashMap.get("Whole_body_Angle"))));
 //
@@ -174,36 +183,49 @@ public class PoseClassifier implements MideaPipePosepredict.PoseLandmarkerListen
 
 //        Bitmap bitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.worrior_pose);
 //        mideaPipePosepredict.detectLiveStream(bitmap);
+        // return
     }
     @Override
     public void onResult(PoseLandmarkerResult result, int imageWidth, int imageHeight) {
         Log.d("결과 수신: ", String.valueOf(result));
         Log.d("이미지 가로: ", String.valueOf(imageWidth));
         Log.d("이미지 세로: ", String.valueOf(imageHeight));
-        landmarks = result.landmarks().get(0);
+        Boolean Calculate_result = false;
+        if (result.landmarks().size() > 0){
+            landmarks = result.landmarks().get(0);
 
 //        List<NormalizedLandmark> upper_body = result.landmarks().get(0).subList(11,17);
 //        List<NormalizedLandmark> lower_body = result.landmarks().get(0).subList(23, 28);
 
-        for (Integer tmp : mappingindex.keySet()){
-            Log.d(mappingindex.get(tmp) + String.valueOf(tmp), String.valueOf(result.landmarks().get(0).get(tmp)));
+//            for (Integer tmp : mappingindex.keySet()) {
+//                Log.d(mappingindex.get(tmp) + String.valueOf(tmp), String.valueOf(result.landmarks().get(0).get(tmp)));
+//                //        CheckFor_Back(landmarks);
+//            }
+            Calculate_result = CheckWarrior(landmarks);
+//            Boolean Calculate_result = Check_Cobra(landmarks);
+            if (Calculate_result){
+                Log.d("Cobra_통과", "각도 비율 통과");
+                success +=1;
+            }else{
+                fail +=1;
+                Log.d("Cobras_불통", "불통");
+            }
+            Log.d("hip_knee_x", String.valueOf(hip_knee));
 
+
+
+
+//            for(String key : AllAngles.keySet()){
+//                Log.d(key + " ", String.valueOf(AllAngles.get(key)));
+//
+//            }
+        }else{
+            Log.d("검출 실패", "검출 실패");
         }
 
-//        CheckFor_Back(landmarks);
-//        CheckWarrior(landmarks);
-        Boolean Calculate_result = Check_Cobra(landmarks);
-        if (Calculate_result){
-            Log.d("Cobra_통과", "각도 비율 통과");
-        }else Log.d("Cobras_불통", "불통");
-        Log.d("hip_knee_x", String.valueOf(hip_knee));
 
 
 
-        for(String key : AllAngles.keySet()){
-            Log.d(key + " ", String.valueOf(AllAngles.get(key)));
-
-        }
 
 
 
@@ -347,15 +369,18 @@ public class PoseClassifier implements MideaPipePosepredict.PoseLandmarkerListen
 
 
 
-    private void CheckWarrior(List<NormalizedLandmark> landmarks){
+    private Boolean CheckWarrior(List<NormalizedLandmark> landmarks){
         boolean AngleResult = WarriorAllAngleCalculate(landmarks);
         boolean RatioResult = Warrior_Upper_Lower_Ratio(landmarks);
         if(AngleResult && RatioResult){
             Log.d("통과", "각도 비율 정상");
+            return true;
         } else if (!AngleResult) {
             Log.d("각도: ", "비정상");
+            return false;
         }else{
             Log.d("비율: ", "비정상");
+            return false;
         }
     }
     private Boolean CheckFor_Back(List<NormalizedLandmark> landmarks){

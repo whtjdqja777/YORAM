@@ -7,6 +7,7 @@ import com.google.mediapipe.framework.image.BitmapImageBuilder;
 import com.google.mediapipe.framework.image.MPImage;
 import com.google.mediapipe.tasks.core.BaseOptions;
 import com.google.mediapipe.tasks.core.Delegate;
+import com.google.mediapipe.tasks.vision.core.ImageProcessingOptions;
 import com.google.mediapipe.tasks.vision.core.RunningMode;
 import com.google.mediapipe.tasks.vision.objectdetector.ObjectDetector;
 import com.google.mediapipe.tasks.vision.objectdetector.ObjectDetectorResult;
@@ -26,7 +27,7 @@ public class MideaPipePosepredict {
 
     private static final int MODEL_LITE = 0;
     private static final int MODEL_FULL = 1;
-    private static final int MODEL_HEAVY = 0;
+    private static final int MODEL_HEAVY = 2;
 
     private static final Map<Integer, String> MODEL_NAMES = new HashMap<Integer, String>();
     static {
@@ -90,19 +91,23 @@ public class MideaPipePosepredict {
 
 
     }
-    public void detectLiveStream(Bitmap bitmap){
+    public void detectLiveStream(MPImage mpImage, ImageProcessingOptions options){
         if (poseLandmarker == null){
             listener.onError("poseLandmarker 객체 없음");
             return;
         }
-        MPImage mpImage = new BitmapImageBuilder(bitmap).build();
+
 //        long frametime = SystemClock.uptimeMillis();
 //        poseLandmarker.detectAsync(mpImage, frametime);// 스트림 데이터 탐지
         try{
-            PoseLandmarkerResult result = poseLandmarker.detect(mpImage);
-            listener.onResult(result, mpImage.getWidth(), mpImage.getHeight());
+            if (poseLandmarker != null){
+                poseLandmarker.detectAsync(mpImage, options, SystemClock.uptimeMillis());
+            }
+
+//
         } catch (Exception e) {
-            listener.onError("추론실패" + e.getMessage());
+            Log.d("추론 실패",  e.getMessage());
+//
         }
 
 
