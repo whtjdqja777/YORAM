@@ -31,11 +31,7 @@ public class OverlayView extends View {
     public static int count = 15;
     public String[] yoga_array = {"전사자세", "다리당기기", "코브라자세"};
     private HashMap<String, String> yogamap;
-    public ArrayList<Integer> yoga_id_array = new ArrayList<>(Arrays.asList(
-            R.drawable.warrior1,
-            R.drawable.for_back_pose,
-            R.drawable.cobra_pose
-    ));
+    public ArrayList<Integer> yoga_id_array;
     private Integer yoga_image;
     private Integer tmp_yoga_image;
     private YogaViewModel yogaViewModel;
@@ -60,7 +56,11 @@ public class OverlayView extends View {
 
     private void init() {
 //        yogaViewModel = new ViewModelProvider((ViewModelStoreOwner) this).get(YogaViewModel.class);
-
+        yoga_id_array = new ArrayList<>(Arrays.asList(
+                R.drawable.warrior1,
+                R.drawable.for_back_pose,
+                R.drawable.cobra_pose
+        ));
         // 기본 이미지 리소스 ID와 텍스트를 초기화
         prefs = getContext().getSharedPreferences("yoga", MODE_PRIVATE);
         PoseName = prefs.getStringSet("pose", new LinkedHashSet<>());

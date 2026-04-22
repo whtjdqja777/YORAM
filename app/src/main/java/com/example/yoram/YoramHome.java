@@ -4,6 +4,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TimePicker;
@@ -20,13 +21,29 @@ public class YoramHome extends AppCompatActivity {
     String onColor = "#A2D5F2";
     String[] days = {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"};
 
+    Button setAlarmbtn;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_yoram_home);
         buttonSetyoga = (Button)findViewById(R.id.buttonSetyoga);
         timePicker = findViewById(R.id.timePicker);
 
+        Calendar now = Calendar.getInstance();
+        Log.d("HOME", "HOME");
+        timePicker.setHour(now.get(Calendar.HOUR_OF_DAY));
+        timePicker.setMinute(now.get(Calendar.MINUTE));
+
+        setAlarmbtn = findViewById(R.id.setAlarmbtn);
+
+        setAlarmbtn.setOnClickListener(v -> {
+            // 일단 시간 정보 알람 설정
+
+
+
+
+        });
         buttonSetyoga.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -38,14 +55,14 @@ public class YoramHome extends AppCompatActivity {
         int[] buttonIds = {R.id.Mon, R.id.Tue, R.id.Wed, R.id.Thu, R.id.Fri, R.id.Sat, R.id.Sun};
         for (int id : buttonIds) {
             Button dayButton = findViewById(id);
-            dayButton.setOnClickListener(dayButtonClickListener);
-            dayButtonStates.put(dayButton, false);
+//            dayButton.setOnClickListener(dayButtonClickListener);
+//            dayButtonStates.put(dayButton, false);
         }
 
         // 초기에는 모든 요일에 대해 시간을 null로 설정
-        for (String day : days) {
-            dayTimeMap.put(day, null);
-        }
+//        for (String day : days) {
+//            dayTimeMap.put(day, null);
+//        }
     }
 
 
@@ -60,7 +77,7 @@ public class YoramHome extends AppCompatActivity {
             dayButtonStates.put(dayButton, isOn);
 
             dayButton.setBackground(new ColorDrawable(isOn ? Color.parseColor(onColor) : Color.parseColor(offColor)));
-            timePicker.setEnabled(isOn);
+//            timePicker.setEnabled(isOn);
 
             if (isOn) {
                 Calendar calendar = dayTimeMap.get(day);
