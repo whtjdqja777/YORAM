@@ -28,6 +28,9 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
@@ -44,12 +47,14 @@ public class HomeFragment extends Fragment {
     String currentActiveDay = null;
     Button setAlarmbtn;
     Calendar calendar;
+    HashSet<String> Clicked_button_info;
     SharedPreferences Check_Clicked_prefs;
     SharedPreferences prefs;
     SharedPreferences prefs2;
     SharedPreferences day_of_weeks_request_code;
     HashSet<String> dayofweeks;
     HashSet Clicked;
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.activity_yoram_home, container, false);
@@ -71,54 +76,58 @@ public class HomeFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        dayofweeks = new HashSet<>();
-        day_of_weeks_request_code = getContext().getSharedPreferences("day_of_weeks_request_code",MODE_PRIVATE);
-        Check_Clicked_prefs = getContext().getSharedPreferences("Clicked",MODE_PRIVATE);
-        if (!day_of_weeks_request_code.contains("days")) {
-            day_of_weeks_request_code.edit().putStringSet(String.valueOf("days"), new HashSet<>());
-        }
-        for (int i = 1; i < 8; i++){
-            dayButtons.put(i, view.findViewById(buttonIds[i-1]));
+        Clicked_button_info = new HashSet<>();
+//        dayofweeks = new HashSet<>();
+        day_of_weeks_request_code = getContext().getSharedPreferences("day_of_weeks_request_code", MODE_PRIVATE);
+//        day_of_weeks_request_code.edit().clear().apply();
+        Log.d("day_of_weeks_request_code", day_of_weeks_request_code.toString());
+        Check_Clicked_prefs = getContext().getSharedPreferences("Clicked", MODE_PRIVATE);
+
+        for (int i = 1; i < 8; i++) {// 이부분이 prefs 참고해서 이전에 버튼 클릭여부에 따라 버튼 초기화 하는 부분인데 필요 없을듯
+            dayButtons.put(i, view.findViewById(buttonIds[i - 1]));
             Log.d("daybuttons", String.valueOf(dayButtons));
             String key = String.valueOf(i);
-            if (!day_of_weeks_request_code.contains(key)){
-                day_of_weeks_request_code.edit().putStringSet(key, new HashSet<>()).apply();
-            }
-            String value = Check_Clicked_prefs.getString(key, "-1");
-            if (!"0".equals(value) &&
-                    !"1".equals(value)){
-                Check_Clicked_prefs.edit().putString(String.valueOf(i), "0").apply();
-                dayButtons.get(i).setBackgroundTintList(ColorStateList.valueOf(Color.parseColor(offColor)));
 
-
-            } else if ("0".equals(value)) {
-                dayButtons.get(i).setBackgroundTintList(ColorStateList.valueOf(Color.parseColor(offColor)));
-
-
-            }else{
-                dayButtons.get(i).setBackgroundTintList(ColorStateList.valueOf(Color.parseColor(onColor)));
-                HashSet tmpset = new HashSet(day_of_weeks_request_code.getStringSet("days", new HashSet<>()));
-                tmpset.add(String.valueOf(i));
-                day_of_weeks_request_code.edit().putStringSet("days", tmpset).apply();
-            }
+//            String value = Check_Clicked_prefs.getString(key, "-1");
+//            if (!"0".equals(value) &&
+//                    !"1".equals(value)){
+//                Check_Clicked_prefs.edit().putString(String.valueOf(i), "0").apply();
+//                dayButtons.get(i).setBackgroundTintList(ColorStateList.valueOf(Color.parseColor(offColor)));
+//
+//
+//            } else if ("0".equals(value)) {
+//                dayButtons.get(i).setBackgroundTintList(ColorStateList.valueOf(Color.parseColor(offColor)));
+//
+//
+//            }else{
+//                dayButtons.get(i).setBackgroundTintList(ColorStateList.valueOf(Color.parseColor(onColor)));
+//                HashSet tmpset = new HashSet(day_of_weeks_request_code.getStringSet("days", new HashSet<>()));
+//                tmpset.add(String.valueOf(i));
+//                Log.d("초기 알람 선택 요일", String.valueOf(tmpset));
+//                day_of_weeks_request_code.edit().putStringSet("days", tmpset).apply();
+//            }
         }
-        Log.d("알람 설정할 요일", String.valueOf(day_of_weeks_request_code.getStringSet("days", new HashSet<>())));
-        prefs = getContext().getSharedPreferences("next_request_code",MODE_PRIVATE);
+
+        prefs = getContext().getSharedPreferences("next_request_code", MODE_PRIVATE);
         prefs2 = getContext().getSharedPreferences("yoga", MODE_PRIVATE);
         setAlarmbtn = view.findViewById(R.id.setAlarmbtn);
 
         setAlarmbtn.setOnClickListener(v -> {
 
-            if (prefs2.getStringSet("pose", new HashSet<>()).size() != 0){
+            if (prefs2.getStringSet("pose", new HashSet<>()).size() != 0) {
 
-                for (String i : day_of_weeks_request_code.getStringSet("days", new HashSet<>())){
+                for (String i : Clicked_button_info) {
 
-                    setAlarm(i);
+                    try {
+                        setAlarm(i);
+                    } catch (JSONException e) {
+                        throw new RuntimeException(e);
+                    }
                 }
 
                 Log.d("prefs pose", String.valueOf(prefs2.getStringSet("pose", new HashSet<>())));
-            }else{
-                Toast.makeText(getContext(),"자세를 선택해 주세요", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(getContext(), "자세를 선택해 주세요", Toast.LENGTH_SHORT).show();
                 Log.d("prefs pose", String.valueOf(prefs2.getStringSet("pose", new HashSet<>())));
             }
 
@@ -162,46 +171,45 @@ public class HomeFragment extends Fragment {
             Integer day = entry.getKey();
             Log.d("day", String.valueOf(day));
             Button dayButton = entry.getValue();
+            Log.d("day", String.valueOf(day));
             dayButton.setOnClickListener(v -> {// 이거 Check_Clicked_prefs 안쓰고 day_of_week_request_code의 days에 해당 요일이 존제하는가로 해도 될듯
                 // day_of_week_request_code의.getStringSet("days", new HashSet<>()).contains(String.valueof(day));로 확인 하면 될듯
                 // 클릭된 요일 저장
-
-                if (Check_Clicked_prefs.getString(String.valueOf(day),"-1").equals("0")){
-                    Check_Clicked_prefs.edit().putString(String.valueOf(day), "1").apply();
-                    Log.d(String.valueOf(day) + "상태", Check_Clicked_prefs.getString(String.valueOf(day),"-1"));
-                    dayButtons.get(day).setBackgroundTintList(ColorStateList.valueOf(Color.parseColor(onColor)));
-
-                    HashSet tmpset = new HashSet(day_of_weeks_request_code.getStringSet("days", new HashSet<>()));
-                    tmpset.add(String.valueOf(day));
-                    day_of_weeks_request_code.edit().putStringSet("days", tmpset).apply();
-                    Log.d("알람 설정할 요일", String.valueOf(day_of_weeks_request_code.getStringSet("days", new HashSet<>())));
-
-
-                }else{// 이거 Check_Clicked_prefs 안쓰고 day_of_week_request_code의 days에 해당 요일이 존제하는가로 해도 될듯
-                    Check_Clicked_prefs.edit().putString(String.valueOf(day), "0").apply();
-                    Log.d(String.valueOf(day) + "상태", Check_Clicked_prefs.getString(String.valueOf(day),"-1"));
+                if (Clicked_button_info.contains(String.valueOf(day))) {
+                    Clicked_button_info.remove(String.valueOf(day));
                     dayButtons.get(day).setBackgroundTintList(ColorStateList.valueOf(Color.parseColor(offColor)));
-
-                    HashSet tmpset = new HashSet(day_of_weeks_request_code.getStringSet("days", new HashSet<>()));
-                    tmpset.remove(String.valueOf(day));
-                    day_of_weeks_request_code.edit().putStringSet("days", tmpset).apply();
-
-                    Log.d("알람 설정할 요일", String.valueOf(day_of_weeks_request_code.getStringSet("days", new HashSet<>())));
+                } else {
+                    dayButtons.get(day).setBackgroundTintList(ColorStateList.valueOf(Color.parseColor(onColor)));
+                    Clicked_button_info.add(String.valueOf(day));
                 }
+                Log.d("Clicked_button_info", String.valueOf(Clicked_button_info));
+
 
             });
         }
     }
 
 
-    private void setAlarm(String day) {
+    private void setAlarm(String day) throws JSONException {// 여기서 JSONobject 호출해서 데이터 구조화 필요
+        JSONObject request_and_time_object = new JSONObject();
+        JSONObject time_object = new JSONObject();
         int requestcode = prefs.getInt("next_request_code", 1000);// 알람마다 requestcode를 따로 설정해야 여러 알람 가능
+//        request_object.put(String.valueOf(requestcode), )
 
-        prefs.edit().putInt("next_request_code", requestcode+1).apply();// 기존 resquestcode에 + 1을 해서 다음 알람 설정할떄 사용
 
         int hour = timePicker.getHour();
         int minute = timePicker.getMinute();
 
+        time_object.put("Hour", hour);
+        time_object.put("Minute", minute);
+        time_object.put("poses", prefs2.getStringSet("pose", new HashSet<>()));
+        request_and_time_object.put(String.valueOf(requestcode), time_object);
+        HashSet tmp_hashset = new HashSet(day_of_weeks_request_code.getStringSet(String.valueOf(day), new HashSet<>()));
+        tmp_hashset.add(request_and_time_object.toString());
+        day_of_weeks_request_code.edit().putStringSet(String.valueOf(day), tmp_hashset).apply();
+
+        Log.d("day_of_weeks_request_code", day + "요일" + String.valueOf(day_of_weeks_request_code.getStringSet(String.valueOf(day), new HashSet<>())));
+        prefs.edit().putInt("next_request_code", requestcode + 1).apply();// 기존 resquestcode에 + 1을 해서 다음 알람 설정할떄 사용
 
         Calendar calendar = Calendar.getInstance();
 //        calendar.set(Calendar.)
@@ -214,8 +222,8 @@ public class HomeFragment extends Fragment {
         if (getActivity() != null) {
             alarmManager = (AlarmManager) getActivity().getSystemService(Context.ALARM_SERVICE);
         }
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S){
-            if(!alarmManager.canScheduleExactAlarms()){
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (!alarmManager.canScheduleExactAlarms()) {
                 Intent intent = new Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM);
                 intent.setData(Uri.parse("package:" + requireContext().getPackageName()));
                 startActivity(intent);
@@ -234,11 +242,7 @@ public class HomeFragment extends Fragment {
             Log.d("AlarmDebug", "알람 설정 완료");
             Toast.makeText(getActivity(), "Alarm set at " + hour + ":" + minute, Toast.LENGTH_SHORT).show();
             // 요일별 requestcode 저장 -> 나중에 알람 제거에 사용
-            HashSet tmpset = new HashSet<>(day_of_weeks_request_code.getStringSet(day, new HashSet<>()));
-            tmpset.add(String.valueOf(requestcode));
-            day_of_weeks_request_code.edit().putStringSet(day, tmpset).apply();
 
-            Log.d("day_of_weeks_request_code", day + "요일" + String.valueOf(day_of_weeks_request_code.getStringSet(String.valueOf(day), new HashSet<>())))        ;
         }
     }
 }

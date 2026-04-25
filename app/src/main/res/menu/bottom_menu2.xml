@@ -23,9 +23,9 @@ android:icon="@drawable/option"
 android:title="설정"
 app:showAsAction="ifRoom"/>
 <item
-android:id="@+id/newsetting2"
+android:id="@+id/Alarmlist"
 android:enabled="true"
-android:title="Page4"
+android:title="목록"
 android:icon="@drawable/ic_launcher_background"
 app:showAsAction="ifRoom"/>
     </menu>

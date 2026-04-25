@@ -67,6 +67,7 @@ public class MainActivity extends AppCompatActivity{
         homeFragment = new HomeFragment();
         mypageFragment = new MypageFragment();
         settingFragment = new SettingFragment();
+        AlarmListFragment alarmListFragment = new AlarmListFragment();
 
         CustomBottomNavigationView1 bottomNavigationView = findViewById(R.id.customBottomBar);
         bottomNavigationView.inflateMenu(R.menu.bottom_menu2);
@@ -95,6 +96,9 @@ public class MainActivity extends AppCompatActivity{
                 } else if(id == R.id.newmhome){
                     getSupportFragmentManager().beginTransaction()
                             .replace(R.id.main_layout2, settingFragment).commitAllowingStateLoss();
+                }else if(id == R.id.Alarmlist){
+                    getSupportFragmentManager().beginTransaction()
+                            .replace(R.id.main_layout2, alarmListFragment).commitAllowingStateLoss();
                 }
                 return false;
             }
