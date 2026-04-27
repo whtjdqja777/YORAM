@@ -214,7 +214,8 @@
                     android:layout_height="90dp"
                     android:src="@drawable/clickicon"
                     android:background="@null"
-                    android:scaleType="fitCenter"/> <!-- 배경을 비워서 그림만 표시 --> />
+                    android:scaleType="fitCenter"
+                    android:clickable="false"/> <!-- 배경을 비워서 그림만 표시 --> />
             </LinearLayout>
         </LinearLayout>
         <LinearLayout
@@ -256,6 +257,7 @@
                     android:layout_height="90dp"
                     android:src="@drawable/clickicon"
                     android:background="@null"
+                    android:clickable="false"
                     android:scaleType="fitCenter"/> <!-- 배경을 비워서 그림만 표시 --> />
             </LinearLayout>
             <View
@@ -293,6 +295,7 @@
                     android:layout_height="90dp"
                     android:src="@drawable/clickicon"
                     android:background="@null"
+                    android:clickable="false"
                     android:scaleType="fitCenter"/> <!-- 배경을 비워서 그림만 표시 --> />
             </LinearLayout>
             <View
@@ -329,6 +332,7 @@
                     android:layout_height="90dp"
                     android:src="@drawable/clickicon"
                     android:background="@null"
+
                     android:scaleType="fitCenter"/> <!-- 배경을 비워서 그림만 표시 --> />
             </LinearLayout>
         </LinearLayout>
@@ -371,6 +375,7 @@
                     android:layout_height="90dp"
                     android:src="@drawable/clickicon"
                     android:background="@null"
+                    android:clickable="false"
                     android:scaleType="fitCenter"/> <!-- 배경을 비워서 그림만 표시 --> />
             </LinearLayout>
             <View
@@ -408,6 +413,7 @@
                     android:layout_height="90dp"
                     android:src="@drawable/clickicon"
                     android:background="@null"
+                    android:clickable="false"
                     android:scaleType="fitCenter"/> <!-- 배경을 비워서 그림만 표시 --> />
             </LinearLayout>
             <View
@@ -444,6 +450,7 @@
                     android:layout_height="90dp"
                     android:src="@drawable/clickicon"
                     android:background="@null"
+                    android:clickable="false"
                     android:scaleType="fitCenter"/> <!-- 배경을 비워서 그림만 표시 --> />
             </LinearLayout>
         </LinearLayout>
@@ -523,6 +530,7 @@
                     android:layout_height="90dp"
                     android:src="@drawable/clickicon"
                     android:background="@null"
+                    android:clickable="false"
                     android:scaleType="fitCenter"/> <!-- 배경을 비워서 그림만 표시 --> />
             </LinearLayout>
             <View
@@ -559,6 +567,7 @@
                     android:layout_height="90dp"
                     android:src="@drawable/clickicon"
                     android:background="@null"
+                    android:clickable="false"
                     android:scaleType="fitCenter" /> <!-- 배경을 비워서 그림만 표시 --> />
             </LinearLayout>
         </LinearLayout>

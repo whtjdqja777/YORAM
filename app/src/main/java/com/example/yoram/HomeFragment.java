@@ -28,6 +28,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -35,14 +36,16 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
 public class HomeFragment extends Fragment {
     TimePicker timePicker;
     Button button_Set_yoga;
     String offColor = "#FF4469";
     String onColor = "#A2D5F2";
-    int[] buttonIds = {R.id.Sun, R.id.Tue, R.id.Wed, R.id.Thu, R.id.Fri, R.id.Sat, R.id.Mon};
+    int[] buttonIds = {R.id.Sun, R.id.Mon, R.id.Tue, R.id.Wed, R.id.Thu, R.id.Fri, R.id.Sat};
     Map<Integer, Button> dayButtons = new HashMap<>();
     String currentActiveDay = null;
     Button setAlarmbtn;
@@ -114,7 +117,7 @@ public class HomeFragment extends Fragment {
 
         setAlarmbtn.setOnClickListener(v -> {
 
-            if (prefs2.getStringSet("pose", new HashSet<>()).size() != 0) {
+            if (!prefs2.getStringSet("pose", new HashSet<>()).isEmpty() && !Clicked_button_info.isEmpty()) {
 
                 for (String i : Clicked_button_info) {
 
@@ -126,10 +129,15 @@ public class HomeFragment extends Fragment {
                 }
 
                 Log.d("prefs pose", String.valueOf(prefs2.getStringSet("pose", new HashSet<>())));
-            } else {
-                Toast.makeText(getContext(), "자세를 선택해 주세요", Toast.LENGTH_SHORT).show();
+            } else if (Clicked_button_info.isEmpty() && prefs2.getStringSet("pose", new HashSet<>()).isEmpty()) {
+                Toast.makeText(getContext(), "요일과 자세를 선텍해주세요", Toast.LENGTH_SHORT).show();
+            } else if(Clicked_button_info.isEmpty()){
+                Toast.makeText(getContext(), "요일를 선택해 주세요", Toast.LENGTH_SHORT).show();
                 Log.d("prefs pose", String.valueOf(prefs2.getStringSet("pose", new HashSet<>())));
+            }else{
+                Toast.makeText(getContext(), "자세를 선택해 주세요", Toast.LENGTH_SHORT).show();
             }
+            Log.d("dayofweek_requestcode", String.valueOf(day_of_weeks_request_code.getAll()));
 
         });
         setDayButtonListeners();
@@ -191,32 +199,91 @@ public class HomeFragment extends Fragment {
 
 
     private void setAlarm(String day) throws JSONException {// 여기서 JSONobject 호출해서 데이터 구조화 필요
+        // 여기서 이전 시간에 알람을 설정하면 바로 울리게 되는데 이를 해결하는 로직 필요
+        Boolean dupicated = false;
         JSONObject request_and_time_object = new JSONObject();
         JSONObject time_object = new JSONObject();
         int requestcode = prefs.getInt("next_request_code", 1000);// 알람마다 requestcode를 따로 설정해야 여러 알람 가능
 //        request_object.put(String.valueOf(requestcode), )
 
+        JSONArray poses = new JSONArray(); // day_of_weeks_request_code에 들어갈 포즈 리스트
+        for (String pose : prefs2.getStringSet("pose", new HashSet<>())){
+            poses.put(pose);
+        }
 
         int hour = timePicker.getHour();
         int minute = timePicker.getMinute();
+        Set<String> oldeset = day_of_weeks_request_code.getStringSet(day, new HashSet<>());
+        Set<String> newset = new HashSet<>();
+        //해당 날짜에
+        if(day_of_weeks_request_code.getAll().keySet().contains(day)
+        &&day_of_weeks_request_code.getStringSet(day, new HashSet<>()).size() != 0){
+            for (String JSONString : oldeset) {
+                JSONObject object = new JSONObject(JSONString);
+                Log.d("JSONobject", String.valueOf(object));
+                //해당 시간 분의 알람이 있으면
 
+                Iterator<String> Keys = object.keys();
+                while(Keys.hasNext()){
+                    String currentkey = Keys.next();
+                    JSONObject timeobject = (JSONObject) object.get(currentkey);
+                    if (timeobject.getInt("Hour") == hour && timeobject.getInt("Minute") == minute
+                    ) {
+                        if (timeobject.getJSONArray("poses").equals(poses)){
+                            Log.d("중복 알림", "완전히 중복된 알람입니다.");
+                            Toast.makeText(getContext(), "중복된 알람입니다.", Toast.LENGTH_SHORT).show();
+                            return;
+                        }else{
+                            Log.d("중복 알람", day + "요일" + hour + "시" + " " + minute + "분");
+                            dupicated = true;
+                            requestcode = Integer.parseInt(currentkey);
+                            Toast.makeText(getContext(), "기존 알람이 수정됩니다. " + timeobject.getJSONArray("poses")
+                                     + " -> " + poses, Toast.LENGTH_SHORT).show();
+                            //여기서 중복된 알람은 newset에 저장을 안하기 때문에 중복 제거됨
+                        }
+
+                    }
+                    else{
+                        JSONObject keep = new JSONObject();
+                        keep.put(currentkey, timeobject);
+                        newset.add(keep.toString());
+                    }
+                }
+
+        }
+
+
+        }
+        if (dupicated){
+            day_of_weeks_request_code.edit().remove(day).apply();// 기존 day에 해당하는 set 제거
+            day_of_weeks_request_code.edit().putStringSet(day, newset).apply();
+            //day에 대한 중복 알람이 제거된 새로운 newset을 저장
+
+        }else{
+            prefs.edit().putInt("next_request_code", requestcode + 1).apply();// 기존 resquestcode에 + 1을 해서 다음 알람 설정할떄 사용
+        }
         time_object.put("Hour", hour);
         time_object.put("Minute", minute);
-        time_object.put("poses", prefs2.getStringSet("pose", new HashSet<>()));
+
+        time_object.put("poses", poses);
         request_and_time_object.put(String.valueOf(requestcode), time_object);
         HashSet tmp_hashset = new HashSet(day_of_weeks_request_code.getStringSet(String.valueOf(day), new HashSet<>()));
         tmp_hashset.add(request_and_time_object.toString());
         day_of_weeks_request_code.edit().putStringSet(String.valueOf(day), tmp_hashset).apply();
 
         Log.d("day_of_weeks_request_code", day + "요일" + String.valueOf(day_of_weeks_request_code.getStringSet(String.valueOf(day), new HashSet<>())));
-        prefs.edit().putInt("next_request_code", requestcode + 1).apply();// 기존 resquestcode에 + 1을 해서 다음 알람 설정할떄 사용
+
 
         Calendar calendar = Calendar.getInstance();
 //        calendar.set(Calendar.)
+        calendar.set(Calendar.DAY_OF_WEEK, Integer.parseInt(day));
         calendar.set(Calendar.HOUR_OF_DAY, hour);
         calendar.set(Calendar.MINUTE, minute);
         calendar.set(Calendar.SECOND, 0);
         calendar.set(Calendar.MILLISECOND, 0);
+        if (calendar.getTimeInMillis() <= System.currentTimeMillis()) {
+            calendar.add(Calendar.DAY_OF_MONTH, 7);
+        }
         Log.d("AlarmDebug", "알람 설정 시간: " + hour + ":" + minute);
         AlarmManager alarmManager = null;
         if (getActivity() != null) {
@@ -232,12 +299,14 @@ public class HomeFragment extends Fragment {
         }
 
         Intent intent = new Intent(getActivity(), AlarmReceiver.class);
+        intent.putExtra("weekday", Integer.parseInt(day));
         intent.putExtra("hour", hour);
         intent.putExtra("minute", minute);
         intent.putExtra("Request_code", requestcode);
         intent.putExtra("NotificationID", requestcode);
+        intent.putExtra("poses", poses.toString());
         if (alarmManager != null) {
-            PendingIntent pendingIntent = PendingIntent.getBroadcast(getActivity(), requestcode, intent, PendingIntent.FLAG_IMMUTABLE);
+            PendingIntent pendingIntent = PendingIntent.getBroadcast(getActivity(), requestcode, intent, PendingIntent.FLAG_IMMUTABLE| PendingIntent.FLAG_UPDATE_CURRENT);
             alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), pendingIntent);
             Log.d("AlarmDebug", "알람 설정 완료");
             Toast.makeText(getActivity(), "Alarm set at " + hour + ":" + minute, Toast.LENGTH_SHORT).show();

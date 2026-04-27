@@ -1,7 +1,10 @@
 package com.example.yoram;
 
+import static android.content.Context.MODE_PRIVATE;
 import static androidx.core.content.ContentProviderCompat.requireContext;
 import static androidx.core.content.ContextCompat.startActivity;
+
+import static java.security.AccessController.getContext;
 
 import android.app.AlarmManager;
 import android.app.NotificationChannel;
@@ -20,15 +23,42 @@ import android.widget.Toast;
 
 import androidx.core.app.NotificationCompat;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+
 import java.util.Calendar;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 
 public class AlarmReceiver extends BroadcastReceiver {
     private static final String CHANNEL_ID = "채널 ID를 입력하세요";
     private static final int NOTIFICATION_ID = 1;
-    SharedPreferences prefs;
+    SharedPreferences prefs_set_poses;
     @Override
     public void onReceive(Context context, Intent intent) {
-        prefs = context.getSharedPreferences("next_request_code", Context.MODE_PRIVATE);
+        prefs_set_poses = context.getSharedPreferences("yoga", MODE_PRIVATE);
+
+        try {
+            HashSet<String> Alarmpose = new HashSet<>();
+            prefs_set_poses.edit().remove("pose").apply();
+            JSONArray poses = new JSONArray(intent.getStringExtra("poses"));
+            Log.d("recevierPoses", String.valueOf(poses));
+            if (poses != null && poses.length() != 0) {
+                Log.d("recevierPoses", String.valueOf(poses));
+                for (int i = 0; i < poses.length(); i++) {
+                    Alarmpose.add(poses.getString(i));
+
+            }
+                prefs_set_poses.edit().putStringSet("pose", Alarmpose).apply();
+                Log.d("prefs_set_poses_from_receiver", String.valueOf(prefs_set_poses.getStringSet("pose", new HashSet<>())));
+            }
+
+        } catch (JSONException e) {
+            throw new RuntimeException(e);
+        }
+
+
         int requestcode = intent.getIntExtra("Request_code", 1000);
         int NotificationID = intent.getIntExtra("NotificationID", -1);
         MediaPlayer player = MediaPlayer.create(context, R.raw.blueming);
@@ -52,7 +82,7 @@ public class AlarmReceiver extends BroadcastReceiver {
                 // Notification을 만들어 NotificationManager를 통해 표시
                 NotificationCompat.Builder notifyBuilder = new NotificationCompat.Builder(context, CHANNEL_ID)
                         .setContentTitle("Yoram")
-                        .setContentText("일어나세요!!!!!.")
+                        .setContentText("일어나세요!!!!!." + requestcode + ":" + intent.getIntExtra("hour", 0) + intent.getIntExtra("minute", 0))
                         .setSmallIcon(R.drawable.ic_launcher_foreground)
                         .setContentIntent(notificationPendingIntent)
                         .setAutoCancel(true);
@@ -61,15 +91,15 @@ public class AlarmReceiver extends BroadcastReceiver {
         }
 
         Log.d("리시버","리시브 완료");
-        resetAlarm(context, intent);
+        resetAlarm(context, intent, requestcode);
 
 
     }
-    private void resetAlarm(Context context, Intent intent){
+    private void resetAlarm(Context context, Intent intent, int target_requestcode){
         Calendar now = Calendar.getInstance();
         Calendar target = Calendar.getInstance();
-        int requestcode = prefs.getInt("next_request_code", 1000);
-        prefs.edit().putInt("next_request_code", requestcode+1).apply();
+        int requestcode = target_requestcode;
+
 
         target.set(Calendar.DAY_OF_WEEK, intent.getIntExtra("weekday", -1));
         target.set(Calendar.HOUR_OF_DAY, intent.getIntExtra("hour", 0));
@@ -95,14 +125,18 @@ public class AlarmReceiver extends BroadcastReceiver {
         Alarm_intent.putExtra("Request_code", requestcode);
         Alarm_intent.putExtra("NotificationID", requestcode);
 
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(context, requestcode, Alarm_intent, PendingIntent.FLAG_IMMUTABLE);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(context, requestcode, Alarm_intent, PendingIntent.FLAG_IMMUTABLE|PendingIntent.FLAG_UPDATE_CURRENT);
 
         if (alarmManager != null){
             alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, target.getTimeInMillis(), pendingIntent);
         }
+        Log.d("resetting_Alarm", "success");
+        Log.d("target", String.valueOf(target.get(Calendar.DAY_OF_MONTH)) + " " + String.valueOf(target.get(Calendar.DAY_OF_WEEK))
+         + " " + String.valueOf(target.get(Calendar.HOUR_OF_DAY)) + " " + String.valueOf(target.get(Calendar.MINUTE)));
 
 
-
+        //리시브 받은 requescode를 재사용해서 기존 알람 requescode 제거 하고
+        // resetAlarm에서 다시 알람하는데 사용해야됨 -> 이러면 prefs를 건드릴 필요 없음(삭제할 때도 그냥 해당 request_code로 제거하면됨)
 
     }
 }

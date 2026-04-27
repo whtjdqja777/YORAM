@@ -1,5 +1,6 @@
 package com.example.yoram;
 
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -9,10 +10,12 @@ import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -26,10 +29,12 @@ public class YogaSellectActivity extends AppCompatActivity {
     private LinearLayout list4;
     private final Set<String> selectedpose = new LinkedHashSet<>();
     private  SharedPreferences prefs;
+    private Set<ImageButton> avaliable_pose;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_yoga_sellect); // Replace with your layout file name
+        avaliable_pose = new HashSet(Arrays.asList(R.id.for_back_pose, R.id.warrior1, R.id.cobra_pose));
 
         // Find your LinearLayouts by their IDs
         list1 = findViewById(R.id.list1);
@@ -109,24 +114,24 @@ public class YogaSellectActivity extends AppCompatActivity {
         });
 
         // For neck actions
-        setClickListener((ImageButton) findViewById(R.id.cat_pose), (ImageView) findViewById(R.id.cat_pose), new boolean[]{false});
-        setClickListener((ImageButton) findViewById(R.id.for_back_pose), (ImageView) findViewById(R.id.for_back_pose), new boolean[]{false});
-        setClickListener((ImageButton) findViewById(R.id.neckact3), (ImageView) findViewById(R.id.neckact3), new boolean[]{false});
+        setClickListener(this,(ImageButton) findViewById(R.id.cat_pose), (ImageView) findViewById(R.id.cat_pose), new boolean[]{false});
+        setClickListener(this, (ImageButton) findViewById(R.id.for_back_pose), (ImageView) findViewById(R.id.for_back_pose), new boolean[]{false});
+        setClickListener(this,(ImageButton) findViewById(R.id.neckact3), (ImageView) findViewById(R.id.neckact3), new boolean[]{false});
 
 // For waist actions
-        setClickListener((ImageButton) findViewById(R.id.waistact1), (ImageView) findViewById(R.id.waistact1), new boolean[]{false});
-        setClickListener((ImageButton) findViewById(R.id.waistact2), (ImageView) findViewById(R.id.waistact2), new boolean[]{false});
-        setClickListener((ImageButton) findViewById(R.id.cobra_pose), (ImageView) findViewById(R.id.cobra_pose), new boolean[]{false});
+        setClickListener(this,(ImageButton) findViewById(R.id.waistact1), (ImageView) findViewById(R.id.waistact1), new boolean[]{false});
+        setClickListener(this,(ImageButton) findViewById(R.id.waistact2), (ImageView) findViewById(R.id.waistact2), new boolean[]{false});
+        setClickListener(this,(ImageButton) findViewById(R.id.cobra_pose), (ImageView) findViewById(R.id.cobra_pose), new boolean[]{false});
 
 // For hip joint actions
-        setClickListener((ImageButton) findViewById(R.id.hipjointact1), (ImageView) findViewById(R.id.hipjointact1), new boolean[]{false});
-        setClickListener((ImageButton) findViewById(R.id.hipjointact2), (ImageView) findViewById(R.id.hipjointact2), new boolean[]{false});
-        setClickListener((ImageButton) findViewById(R.id.hipjointact3), (ImageView) findViewById(R.id.hipjointact3), new boolean[]{false});
+        setClickListener(this,(ImageButton) findViewById(R.id.hipjointact1), (ImageView) findViewById(R.id.hipjointact1), new boolean[]{false});
+        setClickListener(this,(ImageButton) findViewById(R.id.hipjointact2), (ImageView) findViewById(R.id.hipjointact2), new boolean[]{false});
+        setClickListener(this,(ImageButton) findViewById(R.id.hipjointact3), (ImageView) findViewById(R.id.hipjointact3), new boolean[]{false});
 
 // For leg actions
-        setClickListener((ImageButton) findViewById(R.id.warrior1), (ImageView) findViewById(R.id.warrior1), new boolean[]{false});
-        setClickListener((ImageButton) findViewById(R.id.legact2), (ImageView) findViewById(R.id.legact2), new boolean[]{false});
-        setClickListener((ImageButton) findViewById(R.id.legact3), (ImageView) findViewById(R.id.legact3), new boolean[]{false});
+        setClickListener(this, (ImageButton) findViewById(R.id.warrior1), (ImageView) findViewById(R.id.warrior1), new boolean[]{false});
+        setClickListener(this, (ImageButton) findViewById(R.id.legact2), (ImageView) findViewById(R.id.legact2), new boolean[]{false});
+        setClickListener(this, (ImageButton) findViewById(R.id.legact3), (ImageView) findViewById(R.id.legact3), new boolean[]{false});
         ImageButton backButton = findViewById(R.id.back_button);
 
 
@@ -139,14 +144,19 @@ public class YogaSellectActivity extends AppCompatActivity {
         });
     }
 
-    private void setClickListener(ImageButton button, ImageView image, final boolean[] isChecked) {
+    private void setClickListener(Context context, ImageButton button, ImageView image, final boolean[] isChecked) {
         // Initially setting the image as empty
-
         image.setImageDrawable(null);
+
+
 
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                if (!avaliable_pose.contains(button.getId())){
+                    Toast.makeText(context, "해당 동작은 선택할 수 없습니다.", Toast.LENGTH_SHORT).show();
+                    return;
+                }
                 isChecked[0] = !isChecked[0]; // Toggle the state // 위에 세팅 된거 보면 무조건 false임 그래서 true로 만들어준 듯
 
                 if (isChecked[0]) {

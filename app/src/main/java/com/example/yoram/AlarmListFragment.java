@@ -2,6 +2,10 @@ package com.example.yoram;
 
 import static android.content.Context.MODE_PRIVATE;
 
+import android.app.AlarmManager;
+import android.app.PendingIntent;
+import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 
@@ -11,15 +15,19 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.security.Key;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
@@ -89,12 +97,15 @@ public class AlarmListFragment extends Fragment {
         alarmList = new ArrayList<>();
         adapter = new AlarmAdapter(alarmList, alarmItem -> {
             // 알람 삭제 로직 구현
+            deleteAlarm(alarmItem);
+            Log.d("dayofweek_requestcode", String.valueOf(day_of_weeks_request_code.getAll()));
 
         });
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         recyclerView.setAdapter(adapter);
         try {
             loadAlarmList();
+            Log.d("AlarmList", String.valueOf(alarmList));
         } catch (JSONException e) {
             throw new RuntimeException(e);
         }
@@ -107,7 +118,7 @@ public class AlarmListFragment extends Fragment {
 
     }
 
-    private void loadAlarmList() throws JSONException {
+    public void loadAlarmList() throws JSONException {
         alarmList.clear();
         Map<String, ?> getAll = day_of_weeks_request_code.getAll();
         for(String Day_key : getAll.keySet()){
@@ -117,10 +128,15 @@ public class AlarmListFragment extends Fragment {
                 JSONObject object = new JSONObject(day);
                 Iterator<String> key = object.keys();
                 while (key.hasNext()){
-                    String requestCode = key.next();
-                    HashSet<String> pose = new HashSet<>((Collection) object.getJSONObject("poses"));
+                    String requestCodeKey = key.next();
+                    JSONObject times_and_poses = (JSONObject) object.get(requestCodeKey);
 
-                    alarmList.add(new AlarmItem(Day_key,requestCode, object.getInt("Hour"),object.getInt("Minute"), pose));
+                    Log.d("times_and_poses", String.valueOf(times_and_poses));
+                    JSONArray poses = times_and_poses.getJSONArray("poses");
+                    Log.d("poses", String.valueOf(poses));
+
+//                    Log.d("pose", pose);
+                    alarmList.add(new AlarmItem(Day_key, requestCodeKey, times_and_poses.getInt("Hour"),times_and_poses.getInt("Minute"), poses));
 
                 }
 
@@ -130,7 +146,49 @@ public class AlarmListFragment extends Fragment {
         adapter.notifyDataSetChanged();
     }
 
-    private void deleteAlarm(AlarmItem alarmItem){
+    private void deleteAlarm(AlarmItem alarmItem) throws JSONException {
+
+        HashSet newSet = new HashSet<>();
+        String deleteRequestCode = alarmItem.getRequest_Code();
+        Log.d("삭제할 Request_code", deleteRequestCode);
+        for (int i = 0; i < alarmList.size(); i++){
+
+            if (alarmList.get(i).getRequest_Code().equals(deleteRequestCode) ){
+                alarmList.remove(i);
+                adapter.notifyDataSetChanged();
+                Set<String> oldset = day_of_weeks_request_code.getStringSet(alarmItem.getDay(), new HashSet<>());
+                day_of_weeks_request_code.edit().remove(alarmItem.getDay()).apply();
+
+                for (String ob :  oldset){
+
+                    JSONObject object = new JSONObject(ob);
+
+                    if (object.has(deleteRequestCode)){
+                        Log.d("delete_object", object.toString());
+                    }else{
+                        newSet.add(ob);
+                    }
+
+                    }
+            }
+        }
+        if (!newSet.isEmpty()){
+            day_of_weeks_request_code.edit().putStringSet(alarmItem.getDay(), newSet).apply();
+
+        }
+        deleteAlarmRequestCode(Integer.parseInt(deleteRequestCode));
+    }
+    private void deleteAlarmRequestCode (int RequstedCode){
+        Log.d("삭제 requsetcode 전달", String.valueOf(RequstedCode));
+        Intent intent = new Intent(requireContext(), AlarmReceiver.class );
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(requireContext(), RequstedCode, intent, PendingIntent.FLAG_IMMUTABLE|PendingIntent.FLAG_UPDATE_CURRENT );
+
+        AlarmManager alarmManager = (AlarmManager) requireContext().getSystemService(Context.ALARM_SERVICE);
+        if (alarmManager != null){
+            alarmManager.cancel(pendingIntent);
+            pendingIntent.cancel();
+            Log.d("알람 삭제", pendingIntent.toString());
+        }
 
     }
 }

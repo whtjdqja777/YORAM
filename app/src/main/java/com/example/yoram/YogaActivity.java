@@ -65,6 +65,7 @@ public class YogaActivity extends AppCompatActivity {
         setContentView(R.layout.activity_yoga);
         viewFinder = findViewById(R.id.viewFinder);
         overlayView = findViewById(R.id.overlayView);
+
         targetPoseName = overlayView.getCurrenPose();
 
         if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {

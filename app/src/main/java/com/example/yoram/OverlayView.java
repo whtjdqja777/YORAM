@@ -54,12 +54,14 @@ public class OverlayView extends View {
         init();
     }
 
-    private void init() {
+    private void init() { // receive에서 알람 받으면 prefs.edit().clear() 하고 prefs.edit().putStringSet("pose", pose1).apply();
+        // 해서 overView의 init()이 실행됬을때 해당 pose들을 가져오게 한다. 근데 overView가 알람 울릴때 마다 init()을 하는지 봐야됨
 //        yogaViewModel = new ViewModelProvider((ViewModelStoreOwner) this).get(YogaViewModel.class);
         yoga_id_array = new ArrayList<>(Arrays.asList(
                 R.drawable.warrior1,
                 R.drawable.for_back_pose,
                 R.drawable.cobra_pose
+//                R.drawable.cat_pose
         ));
         // 기본 이미지 리소스 ID와 텍스트를 초기화
         prefs = getContext().getSharedPreferences("yoga", MODE_PRIVATE);
@@ -71,7 +73,7 @@ public class OverlayView extends View {
         ArrayList<Integer> tmp_yoga_id_array = new ArrayList<>(yoga_id_array);
         for(Integer yoga_pose_overlay_id : tmp_yoga_id_array){
             pose_name = getResources().getResourceEntryName(yoga_pose_overlay_id);
-
+            Log.d("PosName : pose_name 비교 ", "Posename:" +  PoseName + "pose_name:" + pose_name);
             if (PoseName.contains(pose_name)){
                 PosNameArray.add(pose_name);
             }else{

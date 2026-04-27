@@ -1,5 +1,7 @@
 package com.example.yoram;
 
+import org.json.JSONArray;
+
 import java.util.HashSet;
 
 public class AlarmItem {
@@ -7,9 +9,9 @@ public class AlarmItem {
     private String Request_Code;
     private int Hour;
     private int Minute;
-    private HashSet<String> poses;
+    private JSONArray poses;
 
-    public AlarmItem(String Day, String Request_Code, int Hour, int Minute, HashSet<String> poses){
+    public AlarmItem(String Day, String Request_Code, int Hour, int Minute, JSONArray poses){
         this.Day = Day;
         this.Request_Code = Request_Code;
         this.Hour = Hour;
@@ -29,7 +31,7 @@ public class AlarmItem {
     public int getMinute(){
         return Minute;
     }
-    public HashSet<String> getPoses(){
+    public JSONArray getPoses(){
         return poses;
     }
 }

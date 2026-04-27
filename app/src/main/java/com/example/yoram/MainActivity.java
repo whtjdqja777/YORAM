@@ -27,6 +27,8 @@ import com.google.gson.reflect.TypeToken;
 import com.google.mediapipe.tasks.components.containers.NormalizedLandmark;
 import com.google.mediapipe.tasks.vision.poselandmarker.PoseLandmarkerResult;
 
+import org.json.JSONException;
+
 import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -97,8 +99,10 @@ public class MainActivity extends AppCompatActivity{
                     getSupportFragmentManager().beginTransaction()
                             .replace(R.id.main_layout2, settingFragment).commitAllowingStateLoss();
                 }else if(id == R.id.Alarmlist){
+//
                     getSupportFragmentManager().beginTransaction()
                             .replace(R.id.main_layout2, alarmListFragment).commitAllowingStateLoss();
+//
                 }
                 return false;
             }
