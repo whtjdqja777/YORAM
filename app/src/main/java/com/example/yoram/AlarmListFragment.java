@@ -183,11 +183,17 @@ public class AlarmListFragment extends Fragment {
         Intent intent = new Intent(requireContext(), AlarmReceiver.class );
         PendingIntent pendingIntent = PendingIntent.getBroadcast(requireContext(), RequstedCode, intent, PendingIntent.FLAG_IMMUTABLE|PendingIntent.FLAG_UPDATE_CURRENT );
 
+        Intent Fail_intent = new Intent(requireContext(), FailReceiver.class );
+        PendingIntent Fail_pendingIntent = PendingIntent.getBroadcast(requireContext(), RequstedCode, Fail_intent, PendingIntent.FLAG_IMMUTABLE|PendingIntent.FLAG_UPDATE_CURRENT );
+
         AlarmManager alarmManager = (AlarmManager) requireContext().getSystemService(Context.ALARM_SERVICE);
         if (alarmManager != null){
             alarmManager.cancel(pendingIntent);
+            alarmManager.cancel(Fail_pendingIntent);
+
             pendingIntent.cancel();
-            Log.d("알람 삭제", pendingIntent.toString());
+            Fail_pendingIntent.cancel();
+            Log.d("알람, 실패 알람 삭제", pendingIntent.toString());
         }
 
     }

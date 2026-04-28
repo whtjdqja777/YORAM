@@ -32,7 +32,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class AlarmReceiver extends BroadcastReceiver {
-    private static final String CHANNEL_ID = "채널 ID를 입력하세요";
+    private static final String CHANNEL_ID = "1000";
     private static final int NOTIFICATION_ID = 1;
     SharedPreferences prefs_set_poses;
     @Override
@@ -65,9 +65,32 @@ public class AlarmReceiver extends BroadcastReceiver {
         player.start();
         Log.d("리시버", "리스브 완료");
         Toast.makeText(context, "Alarm! Wake up!", Toast.LENGTH_SHORT).show();
-        NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+
+        Calendar target = Calendar.getInstance();
+        target.set(Calendar.DAY_OF_WEEK, intent.getIntExtra("weekday", -1));
+        target.set(Calendar.HOUR_OF_DAY, intent.getIntExtra("hour", 0));
+        target.set(Calendar.MINUTE, intent.getIntExtra("minute", 0));
+        target.set(Calendar.MILLISECOND, 0);
+        target.set(Calendar.SECOND, 0);
+
+
+        Calendar Fail_target = (Calendar) target.clone();
+        Fail_target.add(Calendar.MINUTE, 1);
 
         Intent notificationIntent = new Intent(context, AlarmStartActivity.class);
+        notificationIntent.putExtra("Request_code", requestcode);
+
+        notificationIntent.putExtra("weekday", Fail_target.get(Calendar.DAY_OF_WEEK));
+        notificationIntent.putExtra("hour", Fail_target.get(Calendar.HOUR_OF_DAY));
+        notificationIntent.putExtra("minute", Fail_target.get(Calendar.MINUTE));
+        notificationIntent.putExtra("Request_code", requestcode);
+        notificationIntent.putExtra("NotificationID", requestcode);
+        notificationIntent.putExtra("poses", intent.getStringExtra("poses"));
+        notificationIntent.setAction("FAIL_ACTION");
+
+        NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+
+
         PendingIntent notificationPendingIntent = PendingIntent.getActivity(context, requestcode, notificationIntent,PendingIntent.FLAG_IMMUTABLE);
 
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
@@ -91,28 +114,20 @@ public class AlarmReceiver extends BroadcastReceiver {
         }
 
         Log.d("리시버","리시브 완료");
-        resetAlarm(context, intent, requestcode);
+        resetAlarm(context, intent, requestcode, target);
 
 
     }
-    private void resetAlarm(Context context, Intent intent, int target_requestcode){
+    private void resetAlarm(Context context, Intent intent, int target_requestcode, Calendar target){
         Calendar now = Calendar.getInstance();
-        Calendar target = Calendar.getInstance();
+
         int requestcode = target_requestcode;
 
-
-        target.set(Calendar.DAY_OF_WEEK, intent.getIntExtra("weekday", -1));
-        target.set(Calendar.HOUR_OF_DAY, intent.getIntExtra("hour", 0));
-        target.set(Calendar.MINUTE, intent.getIntExtra("minute", 0));
-        target.set(Calendar.MILLISECOND, 0);
-        target.set(Calendar.SECOND, 0);
-
-        int nextweekday = (target.get(Calendar.DAY_OF_WEEK) - now.get(Calendar.DAY_OF_WEEK) + 7) % 7;
-
-        if(nextweekday == 0 && target.before(now)){
-            nextweekday = 7;
+        if (target.before(Calendar.getInstance())) {
+            target.add(Calendar.DAY_OF_MONTH, 7);
         }
-        target.add(Calendar.DAY_OF_MONTH, nextweekday);// 7일을 추가
+
+
 
         AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()){
@@ -124,11 +139,18 @@ public class AlarmReceiver extends BroadcastReceiver {
         Alarm_intent.putExtra("minute", target.get(Calendar.MINUTE));
         Alarm_intent.putExtra("Request_code", requestcode);
         Alarm_intent.putExtra("NotificationID", requestcode);
+        Alarm_intent.putExtra("poses", intent.getStringExtra("poses"));
+        Alarm_intent.setAction("ALARM_ACTION");
 
         PendingIntent pendingIntent = PendingIntent.getBroadcast(context, requestcode, Alarm_intent, PendingIntent.FLAG_IMMUTABLE|PendingIntent.FLAG_UPDATE_CURRENT);
 
+
+
+
+
         if (alarmManager != null){
             alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, target.getTimeInMillis(), pendingIntent);
+
         }
         Log.d("resetting_Alarm", "success");
         Log.d("target", String.valueOf(target.get(Calendar.DAY_OF_MONTH)) + " " + String.valueOf(target.get(Calendar.DAY_OF_WEEK))

@@ -62,4 +62,5 @@ dependencies {
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
 //    implementation("com.google.mediapipe:tasks-vision:latest.release")
     implementation("com.google.mediapipe:tasks-vision:0.10.18")
+    implementation("com.github.prolificinteractive:material-calendarview:2.0.1")
 }

@@ -305,9 +305,27 @@ public class HomeFragment extends Fragment {
         intent.putExtra("Request_code", requestcode);
         intent.putExtra("NotificationID", requestcode);
         intent.putExtra("poses", poses.toString());
+        intent.setAction("ALARM_ACTION");
+
+        Calendar Failcalendar = (Calendar) calendar.clone();
+        Failcalendar.add(Calendar.MINUTE, 1);//alarmmanager에 전달할 실패시간
+
+        Intent Fail_intent = new Intent(getActivity(), FailReceiver.class);
+        Fail_intent.putExtra("weekday", Integer.parseInt(day));
+        Fail_intent.putExtra("hour", hour);
+        Fail_intent.putExtra("minute", minute+1);
+
+        Fail_intent.putExtra("Request_code", requestcode);
+        Fail_intent.putExtra("NotificationID", requestcode);
+        Fail_intent.putExtra("poses", poses.toString());
+        Fail_intent.setAction("FAIL_ACTION");
+        Log.d("Fail_intent", Fail_intent.getExtras().toString());
         if (alarmManager != null) {
+            Log.d("setAlarm requestcode", String.valueOf(requestcode));
             PendingIntent pendingIntent = PendingIntent.getBroadcast(getActivity(), requestcode, intent, PendingIntent.FLAG_IMMUTABLE| PendingIntent.FLAG_UPDATE_CURRENT);
+            PendingIntent Fail_pendingIntent = PendingIntent.getBroadcast(getActivity(), requestcode, Fail_intent, PendingIntent.FLAG_IMMUTABLE| PendingIntent.FLAG_UPDATE_CURRENT);
             alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), pendingIntent);
+            alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, Failcalendar.getTimeInMillis(), Fail_pendingIntent);
             Log.d("AlarmDebug", "알람 설정 완료");
             Toast.makeText(getActivity(), "Alarm set at " + hour + ":" + minute, Toast.LENGTH_SHORT).show();
             // 요일별 requestcode 저장 -> 나중에 알람 제거에 사용

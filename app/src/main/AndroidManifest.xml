@@ -38,7 +38,16 @@
             android:name=".YogaEndActivity"
             android:exported="false" />
 
-        <receiver android:name=".AlarmReceiver" />
+        <receiver android:name=".AlarmReceiver" android:exported="false">
+            <intent-filter>
+                <action android:name="ALARM_ACTION" />
+            </intent-filter>
+        </receiver>
+        <receiver android:name=".FailReceiver" android:exported="false">
+            <intent-filter>
+                <action android:name="FAIL_ACTION" />
+            </intent-filter>
+        </receiver>
 
         <service android:name=".AlarmService" />
 

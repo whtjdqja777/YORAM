@@ -43,14 +43,12 @@
             android:textAppearance="@style/explain_text"/>
     </LinearLayout>
 
-    <CalendarView
-        android:layout_marginTop="70dp"
-        android:id="@+id/calendarView"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:dateTextAppearance="@style/explain_text"
-        />
-
+        <com.prolificinteractive.materialcalendarview.MaterialCalendarView
+            android:id="@+id/calendarView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:mcv_showOtherDates="all"
+            app:mcv_selectionColor="#00F0FF" />
 
 
 </LinearLayout>
