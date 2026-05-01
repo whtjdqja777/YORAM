@@ -3,6 +3,7 @@ package com.example.yoram;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
@@ -53,7 +54,10 @@ public class YogaEndActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 set_continuous_day();
-                finishAffinity();
+                Intent intent = new Intent(YogaEndActivity.this, MainActivity.class);
+                startActivity(intent);
+                finish();
+//                finishAffinity();
             }
         });
 

@@ -26,6 +26,8 @@ import org.json.JSONObject;
 
 import java.security.Key;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -52,8 +54,10 @@ public class AlarmListFragment extends Fragment {
     private ArrayList<AlarmItem> alarmList;
     private AlarmAdapter adapter;
     private RecyclerView recyclerView;
-
+    private Calendar calendar;
+    private String YEAR_MONTH;
     private SharedPreferences day_of_weeks_request_code;
+    private SharedPreferences Check_completed;
 
     public AlarmListFragment() {
         // Required empty public constructor
@@ -84,6 +88,13 @@ public class AlarmListFragment extends Fragment {
             mParam1 = getArguments().getString(ARG_PARAM1);
             mParam2 = getArguments().getString(ARG_PARAM2);
         }
+
+        calendar = Calendar.getInstance();
+        YEAR_MONTH = calendar.get(Calendar.YEAR) + "_" + calendar.get(Calendar.MONTH);
+
+        Check_completed = getContext().getSharedPreferences("Check_completed", MODE_PRIVATE);
+        day_of_weeks_request_code = getContext().getSharedPreferences("day_of_weeks_request_code", MODE_PRIVATE);
+
     }
 
     @Override
@@ -91,7 +102,7 @@ public class AlarmListFragment extends Fragment {
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_alarm_list, container, false);
-        day_of_weeks_request_code = getContext().getSharedPreferences("day_of_weeks_request_code", MODE_PRIVATE);
+
 
         recyclerView = view.findViewById(R.id.alarmRecyclerView);
         alarmList = new ArrayList<>();
@@ -176,14 +187,23 @@ public class AlarmListFragment extends Fragment {
             day_of_weeks_request_code.edit().putStringSet(alarmItem.getDay(), newSet).apply();
 
         }
-        deleteAlarmRequestCode(Integer.parseInt(deleteRequestCode));
+        try {
+            deleteAlarmRequestCode(Integer.parseInt(deleteRequestCode));
+        }catch (Exception e){
+            Log.e("삭제 오류", e.toString());
+        }
+        Delete_requestcode_From_Check_completed(alarmItem.getDay(), deleteRequestCode);
+        //Check_completed -> 날짜별 알람 삭제
     }
     private void deleteAlarmRequestCode (int RequstedCode){
+
         Log.d("삭제 requsetcode 전달", String.valueOf(RequstedCode));
         Intent intent = new Intent(requireContext(), AlarmReceiver.class );
+        intent.setAction("ALARM_ACTION");
         PendingIntent pendingIntent = PendingIntent.getBroadcast(requireContext(), RequstedCode, intent, PendingIntent.FLAG_IMMUTABLE|PendingIntent.FLAG_UPDATE_CURRENT );
 
         Intent Fail_intent = new Intent(requireContext(), FailReceiver.class );
+
         PendingIntent Fail_pendingIntent = PendingIntent.getBroadcast(requireContext(), RequstedCode, Fail_intent, PendingIntent.FLAG_IMMUTABLE|PendingIntent.FLAG_UPDATE_CURRENT );
 
         AlarmManager alarmManager = (AlarmManager) requireContext().getSystemService(Context.ALARM_SERVICE);
@@ -195,6 +215,50 @@ public class AlarmListFragment extends Fragment {
             Fail_pendingIntent.cancel();
             Log.d("알람, 실패 알람 삭제", pendingIntent.toString());
         }
+
+
+    }
+    private void Delete_requestcode_From_Check_completed(String day, String RequestCode) throws JSONException {
+        int lastday = calendar.getActualMaximum(Calendar.DAY_OF_MONTH);
+        ArrayList<String> delete_dates = new ArrayList<>();
+        //day는 요일정보
+        Log.d("요일정보", day);
+        for (int i = calendar.get(Calendar.DAY_OF_MONTH); i <= lastday; i++) {
+            calendar.set(Calendar.DAY_OF_MONTH, i);
+            if (Integer.parseInt(day) == calendar.get(Calendar.DAY_OF_WEEK)) {
+                delete_dates.add(String.valueOf(i));
+            }
+
+        }
+        Log.d("delete_dates", String.valueOf(delete_dates));
+
+        Set<String> Check_completed_set = Check_completed.getStringSet(YEAR_MONTH, new HashSet<>());
+        Set<String> newSet = new HashSet<>();
+
+            for (String JSONString : Check_completed_set) {
+                JSONObject object = new JSONObject(JSONString);
+
+                for(String delete_day : delete_dates) {
+
+                    if(object.has(delete_day)){
+                        JSONObject newdayobj = (JSONObject) object.get(delete_day);
+                        newdayobj.remove(RequestCode);
+                        object.remove(delete_day);
+                        if (newdayobj.length() > 0) {
+                            object.put(delete_day, newdayobj);
+                        }
+                    }else{
+                        Log.d("해당 키가 없습니다.", delete_day);
+                    }
+
+
+            }
+                newSet.add(object.toString());
+        }
+
+        Log.d("newSet", String.valueOf(newSet));
+        Check_completed.edit().putStringSet(YEAR_MONTH, newSet).apply();
+        Log.d("Check_completed", String.valueOf(Check_completed.getAll()));
 
     }
 }

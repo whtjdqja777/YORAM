@@ -16,6 +16,10 @@ import android.view.View;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -28,7 +32,7 @@ public class OverlayView extends View {
     private String overlayText;
     private Paint textPaint;
     private Handler handler;
-    public static int count = 15;
+    public static int count = 60;
     public String[] yoga_array = {"전사자세", "다리당기기", "코브라자세"};
     private HashMap<String, String> yogamap;
     public ArrayList<Integer> yoga_id_array;
@@ -37,8 +41,9 @@ public class OverlayView extends View {
     private YogaViewModel yogaViewModel;
     public int yoga_count = 0;
     private SharedPreferences prefs;
-    private Set<String> PoseName;
+    private JSONArray PoseName;
     private final ArrayList<String> PosNameArray = new ArrayList<>();
+    private final HashMap<Integer,String > PoseNameMap = new HashMap<>();
     public OverlayView(Context context) {
         super(context);
         init();
@@ -57,31 +62,23 @@ public class OverlayView extends View {
     private void init() { // receive에서 알람 받으면 prefs.edit().clear() 하고 prefs.edit().putStringSet("pose", pose1).apply();
         // 해서 overView의 init()이 실행됬을때 해당 pose들을 가져오게 한다. 근데 overView가 알람 울릴때 마다 init()을 하는지 봐야됨
 //        yogaViewModel = new ViewModelProvider((ViewModelStoreOwner) this).get(YogaViewModel.class);
+
         yoga_id_array = new ArrayList<>(Arrays.asList(
                 R.drawable.warrior1,
                 R.drawable.for_back_pose,
                 R.drawable.cobra_pose
 //                R.drawable.cat_pose
         ));
+        PoseNameMap.put(R.drawable.warrior1, "전사자세");
+        PoseNameMap.put(R.drawable.for_back_pose, "다리잡아 당기기");
+        PoseNameMap.put(R.drawable.cobra_pose, "코브라 자세");
         // 기본 이미지 리소스 ID와 텍스트를 초기화
         prefs = getContext().getSharedPreferences("yoga", MODE_PRIVATE);
-        PoseName = prefs.getStringSet("pose", new LinkedHashSet<>());
+
 //        yoga_count = PoseName.size();
-        Log.d("PoseName", String.valueOf(PoseName));
-        yogamap = new HashMap<>();
-        String pose_name;
-        ArrayList<Integer> tmp_yoga_id_array = new ArrayList<>(yoga_id_array);
-        for(Integer yoga_pose_overlay_id : tmp_yoga_id_array){
-            pose_name = getResources().getResourceEntryName(yoga_pose_overlay_id);
-            Log.d("PosName : pose_name 비교 ", "Posename:" +  PoseName + "pose_name:" + pose_name);
-            if (PoseName.contains(pose_name)){
-                PosNameArray.add(pose_name);
-            }else{
-                Log.d("yoga_id_poseName", getResources().getResourceEntryName(yoga_pose_overlay_id));
-                yoga_id_array.remove(yoga_pose_overlay_id);
-            }
-        }
-        Log.d("yoga_id_array", String.valueOf(yoga_id_array));
+//        Log.d("PoseName", String.valueOf(PoseName));
+
+
         updateTextPeriodically();
         invalidate();
     }
@@ -106,16 +103,13 @@ public class OverlayView extends View {
         // 동작선택 화면에서 자세를 선택하고 버튼을 클릭하면 callback으로 OverlayView에 선택된 자세정보와 갯수 정보 넘기면됨
         yoga_image = yoga_id_array.get(yoga_count);
         tmp_yoga_image = new Integer(yoga_image);
-        if (!tmp_yoga_image.equals(yoga_image)){// yoga_count가 증가해서 이미지가 바뀌면 target이미지를 바꾸기 위한 코드
-            //
 
-        }
         setOverlayImage(yoga_image);//yoga_count 기본값이 0이라 일단 출력이 되긴함
         if (count > 0) {
             setOverlayText("남은 시간 : " + count--);
         } else {
             setOverlayText("다음 동작으로 넘어갑니다.");
-            count = 15; // 카운트 재설정
+            count = 60; // 카운트 재설정
             yoga_count++;
         }
     }
@@ -152,11 +146,11 @@ public class OverlayView extends View {
                 textPaint.setColor(Color.BLACK);
                 textPaint.setTextSize(50); // 텍스트 크기 설정
             }
-            if (yoga_count < yoga_array.length) {
+            if (yoga_count < yoga_id_array.size()) {
                 canvas.drawText(overlayText, 60, 50, textPaint); // 텍스트 위치 설정
                 canvas.drawText("카메라에 보이시는 동작을 따라하세요.", 30, 110, textPaint);
                 canvas.drawText("정확한 동작을 하셔야 카운트가 줄어듭니다.", 30, 170, textPaint);
-                canvas.drawText("동작 이름 : " + yoga_array[yoga_count], 30, 230, textPaint);
+                canvas.drawText("동작 이름 : " + PoseNameMap.get(yoga_id_array.get(yoga_count)), 30, 230, textPaint);
             }
         }
     }
@@ -164,6 +158,28 @@ public class OverlayView extends View {
     public String getCurrenPose(){
         return getResources().getResourceEntryName(yoga_image);
     }
+    public void setPoses(JSONArray poses) throws JSONException {
+        this.PoseName = poses;
+        ArrayList<String> PoseName_Array = new ArrayList<>();
+        for (int i = 0; i < PoseName.length(); i++){
+            PoseName_Array.add(PoseName.getString(i));
+
+        }
+
+        String pose_name;
+        ArrayList<Integer> tmp_yoga_id_array = new ArrayList<>(yoga_id_array);
+        for(Integer yoga_pose_overlay_id : tmp_yoga_id_array){
+            pose_name = getResources().getResourceEntryName(yoga_pose_overlay_id);
+            Log.d("PoseName_Array : pose_name 비교 ", "PoseName_Array:" +  PoseName_Array + "pose_name:" + pose_name);
+            if (PoseName_Array.contains(pose_name)){
+
+            }else{
+                Log.d("yoga_id_poseName", getResources().getResourceEntryName(yoga_pose_overlay_id));
+                yoga_id_array.remove(yoga_pose_overlay_id);
+                PoseNameMap.remove(yoga_pose_overlay_id);
+            }
+        }
+        Log.d("yoga_id_array", String.valueOf(yoga_id_array));
+    }
 
 }
-

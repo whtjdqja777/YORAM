@@ -21,7 +21,14 @@ public class FailReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        Log.d("get_Fail_intent", intent.getExtras().toString());
+        if(intent != null){
+            Log.d("get_Fail_intent", intent.getExtras().toString());
+        }else{
+            Log.d("FailReceiver", "intent가 null입니다.");
+
+            return;
+        }
+
         int requestcode = intent.getIntExtra("Request_code", 1000);
         int NotificationID = intent.getIntExtra("NotificationID", -1);
         NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
@@ -53,7 +60,7 @@ public class FailReceiver extends BroadcastReceiver {
         }
         Intent go_back_to_Main_intent = new Intent(context, MainActivity.class);
         go_back_to_Main_intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
-        context.startActivity(intent);
+        context.startActivity(go_back_to_Main_intent);
     }
 
 }

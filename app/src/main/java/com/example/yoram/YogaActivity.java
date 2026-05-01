@@ -12,6 +12,7 @@ import android.graphics.YuvImage;
 import android.media.Image;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.Toast;
 
 import java.nio.ByteOrder;
 import java.util.ArrayList;
@@ -35,6 +36,9 @@ import com.google.mediapipe.framework.image.MPImage;
 import com.google.mediapipe.framework.image.MediaImageBuilder;
 import com.google.mediapipe.tasks.vision.core.ImageProcessingOptions;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.tensorflow.lite.DataType;
 import org.tensorflow.lite.support.tensorbuffer.TensorBuffer;
 
@@ -44,6 +48,9 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
+import java.util.Calendar;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 public class YogaActivity extends AppCompatActivity {
@@ -59,6 +66,9 @@ public class YogaActivity extends AppCompatActivity {
     PoseClassifier poseClassifier;
     MPImage mpImage;
     ImageProcessingOptions options;
+    SharedPreferences Check_completed;
+    Intent intent;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -66,7 +76,27 @@ public class YogaActivity extends AppCompatActivity {
         viewFinder = findViewById(R.id.viewFinder);
         overlayView = findViewById(R.id.overlayView);
 
-        targetPoseName = overlayView.getCurrenPose();
+//        targetPoseName = overlayView.getCurrenPose(); // -> overlyview.setposes(String intent.get(pose) 한거로
+        //받아와서 해야 될듯 -> 현 엑티비티에서 받은 poses로 하면 로직 많이 바꿔야 할 듯
+        Check_completed = getSharedPreferences("Check_completed", MODE_PRIVATE);
+        intent = getIntent();
+        try {
+            JSONArray poses = new JSONArray(intent.getStringExtra("poses"));
+            if (poses.length() == 0){
+                Toast.makeText(this, "오류: 요가 목록이 없습니다.", Toast.LENGTH_SHORT).show();
+                finish();
+                return;
+            }
+            overlayView.setPoses(poses);
+            if (overlayView.yoga_id_array.isEmpty()){
+                Toast.makeText(this, "오류: 요가 목록이 없습니다.", Toast.LENGTH_SHORT).show();
+                finish();
+                return;
+            }
+        } catch (JSONException e) {
+            throw new RuntimeException(e);
+        }
+
 
         if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
             startCamera();
@@ -140,7 +170,7 @@ public class YogaActivity extends AppCompatActivity {
 
                     Log.d("poseClassifier.success", String.valueOf(poseClassifier.success));
                     Log.d("poseClassifier.fail", String.valueOf(poseClassifier.fail));
-                    if (poseClassifier.success >= poseClassifier.fail){
+                    if (true){//poseClassifier.success >= poseClassifier.fail
                         overlayView.updateTextPeriodically();// 오버레이는 위 조건이 만족하여 15번 실행되면 바뀌게 되어 있음
                         Log.d("자세 성공", "자세 성공");
                         String tmpnewtarget = overlayView.getCurrenPose();
@@ -219,7 +249,7 @@ public class YogaActivity extends AppCompatActivity {
             return result;
             // find the index of the class with the biggest confidence.
             // Releases model resources if no longer used.
-        } catch (IOException e) {
+        } catch (IOException | JSONException e) {
             // TODO Handle the exception
             return "stand";
         }
@@ -255,11 +285,14 @@ public class YogaActivity extends AppCompatActivity {
         Bitmap resizedBitmap = Bitmap.createScaledBitmap(originalBitmap, 224, 224, true);
         return resizedBitmap;
     }
-    private void checkAndCompleteYoga() {
+    private void checkAndCompleteYoga() throws JSONException {
         // 모든 요가 동작이 완료되었는지 확인
+
         if(overlayView.yoga_count >= overlayView.yoga_id_array.size()){
-            Intent intent = new Intent(YogaActivity.this, YogaEndActivity.class);
-            startActivity(intent);
+            Intent endintent = new Intent(YogaActivity.this, YogaEndActivity.class);
+            startActivity(endintent);
+            //완료시 Check_completed 수정(true로 바꾸기) 및 마이페이지로 이동
+            reset_Check_completed_prefs(getIntent());
             finish();
         }
 
@@ -303,6 +336,62 @@ public class YogaActivity extends AppCompatActivity {
         return result;
     }
 
+
+    private void reset_Check_completed_prefs(Intent intent) throws JSONException {
+        Calendar calendar = Calendar.getInstance();
+        int year = intent.getIntExtra("YEAR", 0);
+        int month = intent.getIntExtra("MONTH", 0);
+
+        String YEAR_MONTH = year + "_" + month;
+        Log.d("YEAR_MONTH_in_yogaact", YEAR_MONTH);
+//        String day_of_week = intent.getStringExtra("weekday");
+        // 요가 도중에 요일이 바뀌면 날짜가 +1 된거고 날짜가 바뀌어서 월과 년이 바뀌어서 Calendar.YEAR, MONTH해버리면
+        // 다음 달의 해당 요일의 날짜에서 true로 바꿀거 찾을텐데 없는게 당연하고(에초에 생성이 안되어 있을 가능성도 있음,
+        // HomeFragment가 초기화 되어야 업데이트가 되서), 2~3월에 겹치는 경우도 있다는데
+        //그럼 다음 달의 같은 요일의 같은 날짜에 true 표기가 됨
+        //에초에 YEAR, MONTH 정보도 같이 넘기는게 맞는거 같은데
+        Integer requestcode = intent.getIntExtra("Request_code",1000);
+
+        if (!Check_completed.contains(YEAR_MONTH)){
+            Log.d("Check_completed", "해당 YEAR_MONTH 없음");
+
+        }else{
+            Check_completed.edit().putStringSet(YEAR_MONTH, new HashSet<>());
+        }
+
+        Set<String> Checkset = Check_completed.getStringSet(YEAR_MONTH, new HashSet<>());
+        Set<String> NewCheckset = new HashSet<>();
+        String day = String.valueOf(calendar.get(Calendar.DAY_OF_MONTH));
+        // 당일거 받은면 요가 알람 진행 중 다음달로 넘어갔을때
+        // (ex) 알람이 5월 31일에서 6월 1일로 넘어갔을때) 여기서 켈린더로 당일 날짜가져오면 당연히 없음
+        //이거 받은 year, month와 weekday까지 받아가지고 해당 달의 해당 요일에 해당하는 날짜들 찾아서
+        //for문 돌면서 if object.has(day) 해가지고 맞는 날짜들 찾으면
+        //이전 달의 알람 설정되었던 같은 요일들 날짜 다 나올텐데
+        //현재 calendar.get(DAY_OF_MONTH) 와 가장 차이가 많이 나는 녀석을 골라서 true로 만들어 주면됌
+        for (String JSONString : Checkset) {
+            JSONObject object = new JSONObject(JSONString);
+            if (object.has(day)){
+                try{
+                    object.getJSONObject(day).put(String.valueOf(requestcode), true);
+                }catch (JSONException e){
+                    Log.e("JSON_INPUT_ERROR", e.toString());
+                }
+
+                NewCheckset.add(object.toString());
+
+            }
+            else {
+                Log.e("해당하는 날짜 없음", day + "일" + " 해당 reqestcode 알람 없음");
+            }
+        }
+        if(!NewCheckset.isEmpty()){
+            Check_completed.edit().putStringSet(YEAR_MONTH, NewCheckset).apply();
+        }else{
+            Log.d("intent 수신 오류: ", intent.toString());
+        }
+
+        Log.d("Check_completed", String.valueOf(Check_completed.getAll()));
+    }
     @Override
     protected void onDestroy() {
         super.onDestroy();
@@ -310,7 +399,7 @@ public class YogaActivity extends AppCompatActivity {
             cameraProvider.unbindAll();
         }
         SharedPreferences prefs = getSharedPreferences("yoga", MODE_PRIVATE);
-        prefs.edit().clear().apply();
+//        prefs.edit().clear().apply();
 
     }
 

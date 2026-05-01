@@ -34,14 +34,14 @@ import java.util.Set;
 public class AlarmReceiver extends BroadcastReceiver {
     private static final String CHANNEL_ID = "1000";
     private static final int NOTIFICATION_ID = 1;
-    SharedPreferences prefs_set_poses;
+//    SharedPreferences prefs_set_poses;
     @Override
     public void onReceive(Context context, Intent intent) {
-        prefs_set_poses = context.getSharedPreferences("yoga", MODE_PRIVATE);
+//        prefs_set_poses = context.getSharedPreferences("yoga", MODE_PRIVATE);
 
         try {
             HashSet<String> Alarmpose = new HashSet<>();
-            prefs_set_poses.edit().remove("pose").apply();
+//            prefs_set_poses.edit().remove("pose").apply();
             JSONArray poses = new JSONArray(intent.getStringExtra("poses"));
             Log.d("recevierPoses", String.valueOf(poses));
             if (poses != null && poses.length() != 0) {
@@ -50,8 +50,8 @@ public class AlarmReceiver extends BroadcastReceiver {
                     Alarmpose.add(poses.getString(i));
 
             }
-                prefs_set_poses.edit().putStringSet("pose", Alarmpose).apply();
-                Log.d("prefs_set_poses_from_receiver", String.valueOf(prefs_set_poses.getStringSet("pose", new HashSet<>())));
+//                prefs_set_poses.edit().putStringSet("pose", Alarmpose).apply();
+//                Log.d("prefs_set_poses_from_receiver", String.valueOf(prefs_set_poses.getStringSet("pose", new HashSet<>())));
             }
 
         } catch (JSONException e) {
@@ -67,6 +67,8 @@ public class AlarmReceiver extends BroadcastReceiver {
         Toast.makeText(context, "Alarm! Wake up!", Toast.LENGTH_SHORT).show();
 
         Calendar target = Calendar.getInstance();
+        target.set(Calendar.YEAR, intent.getIntExtra("YEAR", 0));
+        target.set(Calendar.MONTH, intent.getIntExtra("MONTH",0));
         target.set(Calendar.DAY_OF_WEEK, intent.getIntExtra("weekday", -1));
         target.set(Calendar.HOUR_OF_DAY, intent.getIntExtra("hour", 0));
         target.set(Calendar.MINUTE, intent.getIntExtra("minute", 0));
@@ -75,11 +77,12 @@ public class AlarmReceiver extends BroadcastReceiver {
 
 
         Calendar Fail_target = (Calendar) target.clone();
-        Fail_target.add(Calendar.MINUTE, 1);
+//        Fail_target.add(Calendar.MINUTE, 1);
 
         Intent notificationIntent = new Intent(context, AlarmStartActivity.class);
         notificationIntent.putExtra("Request_code", requestcode);
-
+        notificationIntent.putExtra("YEAR", Fail_target.get(Calendar.YEAR));
+        notificationIntent.putExtra("MONTH", Fail_target.get(Calendar.MONTH));
         notificationIntent.putExtra("weekday", Fail_target.get(Calendar.DAY_OF_WEEK));
         notificationIntent.putExtra("hour", Fail_target.get(Calendar.HOUR_OF_DAY));
         notificationIntent.putExtra("minute", Fail_target.get(Calendar.MINUTE));
@@ -90,6 +93,7 @@ public class AlarmReceiver extends BroadcastReceiver {
 
         NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
 
+        Log.d("MONTHINRECV", String.valueOf(Fail_target.get(Calendar.MONTH)));
 
         PendingIntent notificationPendingIntent = PendingIntent.getActivity(context, requestcode, notificationIntent,PendingIntent.FLAG_IMMUTABLE);
 
@@ -134,6 +138,8 @@ public class AlarmReceiver extends BroadcastReceiver {
             return;
         }
         Intent Alarm_intent = new Intent(context, AlarmReceiver.class);
+        Alarm_intent.putExtra("YEAR", target.get(Calendar.YEAR));
+        Alarm_intent.putExtra("MONTH", target.get(Calendar.MONTH));
         Alarm_intent.putExtra("weekday", target.get(Calendar.DAY_OF_WEEK));
         Alarm_intent.putExtra("hour", target.get(Calendar.HOUR_OF_DAY));
         Alarm_intent.putExtra("minute", target.get(Calendar.MINUTE));
