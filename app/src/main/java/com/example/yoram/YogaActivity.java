@@ -341,9 +341,10 @@ public class YogaActivity extends AppCompatActivity {
         Calendar calendar = Calendar.getInstance();
         int year = intent.getIntExtra("YEAR", 0);
         int month = intent.getIntExtra("MONTH", 0);
-
+        //여기서 inent 통짜로 묶어서 보낸거 받아졌는지 확인
         String YEAR_MONTH = year + "_" + month;
         Log.d("YEAR_MONTH_in_yogaact", YEAR_MONTH);
+        String day = String.valueOf(intent.getIntExtra("DAY", -1));
 //        String day_of_week = intent.getStringExtra("weekday");
         // 요가 도중에 요일이 바뀌면 날짜가 +1 된거고 날짜가 바뀌어서 월과 년이 바뀌어서 Calendar.YEAR, MONTH해버리면
         // 다음 달의 해당 요일의 날짜에서 true로 바꿀거 찾을텐데 없는게 당연하고(에초에 생성이 안되어 있을 가능성도 있음,
@@ -360,14 +361,14 @@ public class YogaActivity extends AppCompatActivity {
         }
 
         Set<String> Checkset = Check_completed.getStringSet(YEAR_MONTH, new HashSet<>());
-        Set<String> NewCheckset = new HashSet<>();
-        String day = String.valueOf(calendar.get(Calendar.DAY_OF_MONTH));
-        // 당일거 받은면 요가 알람 진행 중 다음달로 넘어갔을때
+        Set<String> NewCheckset = new HashSet<>();;
+        // 당일거 받으면 요가 알람 진행 중 다음달로 넘어갔을때
         // (ex) 알람이 5월 31일에서 6월 1일로 넘어갔을때) 여기서 켈린더로 당일 날짜가져오면 당연히 없음
-        //이거 받은 year, month와 weekday까지 받아가지고 해당 달의 해당 요일에 해당하는 날짜들 찾아서
-        //for문 돌면서 if object.has(day) 해가지고 맞는 날짜들 찾으면
-        //이전 달의 알람 설정되었던 같은 요일들 날짜 다 나올텐데
-        //현재 calendar.get(DAY_OF_MONTH) 와 가장 차이가 많이 나는 녀석을 골라서 true로 만들어 주면됌
+        // 해결: 그냥 Receive 받자마자 int day = calendar.get(Calendar.DAY_OF_MONTH)
+        //해서 intent에 담아서 보내면 되는 거였음
+        //알람이 울리자마자 울린 날짜의 day를 넘기기 때문에 월 또는 날짜가 다음 월 날 로 넘어갔을때의
+        // 모든 문제가 해결됨
+        //
         for (String JSONString : Checkset) {
             JSONObject object = new JSONObject(JSONString);
             if (object.has(day)){

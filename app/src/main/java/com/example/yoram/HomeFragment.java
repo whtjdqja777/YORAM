@@ -65,6 +65,7 @@ public class HomeFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.activity_yoram_home, container, false);
+
         timePicker = view.findViewById(R.id.timePicker);
         button_Set_yoga = view.findViewById(R.id.buttonSetyoga);
         Log.d("홈 프레그먼트", "홈 프레그먼트");
@@ -84,9 +85,13 @@ public class HomeFragment extends Fragment {
         Log.d("dates_Alarm_Completed_Check", dates_Alarm_Completed_Check.getAll().toString());
 
         YEAR_MONTH = String.valueOf(calendar.get(Calendar.YEAR)) + "_" +String.valueOf(calendar.get(Calendar.MONTH));
-
+        //앱 실행하면 해당 년 월을 가져옴
         if (!dates_Alarm_Completed_Check.contains(YEAR_MONTH) && !day_of_weeks_request_code.getAll().isEmpty()){// 최초이거나 달이 넘어 갔을때 처음 초기화
 //            dates_Alarm_Completed_Check.edit().putStringSet(YEAR_MONTH, new HashSet<>()).apply();
+                // 해당 년 월에 해당하는 키가 없으면 get_day() 실행해서
+            //Check_Completed에 해당 년 월 키 만들고 day_of_week_requestcode의 알람 정보 가져와서 기록함
+            // 요일 별로 해당 달에 알람을 하는 알람이기 때문에 Check_Completed에 년 월 날짜 별 알람 기록 안되는
+            //문제는 없을 듯
             try {
                 get_days(day_of_weeks_request_code.getAll().keySet(), YEAR_MONTH);
                 //이제 삽입, 삭제, 완료, 때 dates_Alarm_Completed_Check 수정하는 코드 짜고 테스트
@@ -265,7 +270,7 @@ public class HomeFragment extends Fragment {
                         }else{
                             Log.d("중복 알람", day + "요일" + hour + "시" + " " + minute + "분");
                             dupicated = true;
-                            requestcode = Integer.parseInt(currentkey);
+                            requestcode = Integer.parseInt(currentkey);// 여기서 request_code 바꾸기 때문에 알람 제거되거나하는 문제는 상관 없음
                             Toast.makeText(getContext(), "기존 알람이 수정됩니다. " + timeobject.getJSONArray("poses")
                                      + " -> " + poses, Toast.LENGTH_SHORT).show();
                             //여기서 중복된 알람은 newset에 저장을 안하기 때문에 중복 제거됨
@@ -287,6 +292,10 @@ public class HomeFragment extends Fragment {
             day_of_weeks_request_code.edit().remove(pref_key_day).apply();// 기존 day에 해당하는 set 제거
             day_of_weeks_request_code.edit().putStringSet(pref_key_day, newset).apply();
             //day에 대한 중복 알람이 제거된 새로운 newset을 저장
+            //requestcode는 포즈를 바꾸는 알람이 저장되어있는 requestcode를 가져옴(day_of_weeks_request_code에서)
+
+            Log.d("시간 중복, 포즈 바꿈", "requestcode는 day_of_weeks_request_code에서 가져옴");
+
 
         }else{
             prefs.edit().putInt("next_request_code", requestcode + 1).apply();// 기존 resquestcode에 + 1을 해서 다음 알람 설정할떄 사용
@@ -353,6 +362,7 @@ public class HomeFragment extends Fragment {
         Log.d("setAlarmMonth", String.valueOf(calendar.get(Calendar.MONTH)));
         Log.d("AlarmDebug", "알람 설정 완료");
         Toast.makeText(getActivity(), "Alarm set at " + hour + ":" + minute, Toast.LENGTH_SHORT).show();
+        Toast.makeText(getActivity(), "Alarm Requestcode: " + String.valueOf(requestcode), Toast.LENGTH_SHORT).show();
         Calendar Failcalendar = (Calendar) calendar.clone();
         Failcalendar.add(Calendar.MINUTE, 1);//alarmmanager에 전달할 실패시간
 

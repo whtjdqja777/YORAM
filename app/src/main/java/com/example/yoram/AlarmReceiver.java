@@ -67,6 +67,15 @@ public class AlarmReceiver extends BroadcastReceiver {
         Toast.makeText(context, "Alarm! Wake up!", Toast.LENGTH_SHORT).show();
 
         Calendar target = Calendar.getInstance();
+        int day = target.get(Calendar.DAY_OF_MONTH);// 알람이 설정 되어 receive된 날짜가 알람이 설정된 날짜
+        //homeFragment에서 알람을 설정할떄 요일 단위로 설정하고 날짜는 요일 기반으로 가져와서 알람을 설정하기
+        //때문에 yogaStartActivity에서 day를 알 수 가 없음 (하지만 day정보가 있어야지 Check_Completed에서
+        //true/false를 정확히 바꿀수 있기 때문에 (저기서도 오늘 날짜로 해서 true/false를 바꾸긴 했지만 이건
+        //yogaAcrivity가 끝나야 실행됬던거라 요가 진행 도중 날짜나 월이 넘어가게 되면 calender.get(Calendar.DAY_OF_MONTH)
+        // 했을때 현재의 날짜를 가져오기때문에 (ex)월이 넘어갔을때 1을 가져오고 날짜가 넘어 갔을땐 다음 날의 날짜를 가져옴
+        //그래서 에초에 알람을 Receive 받았을때 날짜를 계산해서 intent래서 yogaStartActivity -> yogaActivity로
+        //보내면 해결될 문제 였음
+
         target.set(Calendar.YEAR, intent.getIntExtra("YEAR", 0));
         target.set(Calendar.MONTH, intent.getIntExtra("MONTH",0));
         target.set(Calendar.DAY_OF_WEEK, intent.getIntExtra("weekday", -1));
@@ -80,15 +89,8 @@ public class AlarmReceiver extends BroadcastReceiver {
 //        Fail_target.add(Calendar.MINUTE, 1);
 
         Intent notificationIntent = new Intent(context, AlarmStartActivity.class);
-        notificationIntent.putExtra("Request_code", requestcode);
-        notificationIntent.putExtra("YEAR", Fail_target.get(Calendar.YEAR));
-        notificationIntent.putExtra("MONTH", Fail_target.get(Calendar.MONTH));
-        notificationIntent.putExtra("weekday", Fail_target.get(Calendar.DAY_OF_WEEK));
-        notificationIntent.putExtra("hour", Fail_target.get(Calendar.HOUR_OF_DAY));
-        notificationIntent.putExtra("minute", Fail_target.get(Calendar.MINUTE));
-        notificationIntent.putExtra("Request_code", requestcode);
-        notificationIntent.putExtra("NotificationID", requestcode);
-        notificationIntent.putExtra("poses", intent.getStringExtra("poses"));
+        notificationIntent.putExtras(intent);
+        notificationIntent.putExtra("DAY", day);
         notificationIntent.setAction("FAIL_ACTION");
 
         NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
@@ -138,27 +140,18 @@ public class AlarmReceiver extends BroadcastReceiver {
             return;
         }
         Intent Alarm_intent = new Intent(context, AlarmReceiver.class);
-        Alarm_intent.putExtra("YEAR", target.get(Calendar.YEAR));
-        Alarm_intent.putExtra("MONTH", target.get(Calendar.MONTH));
-        Alarm_intent.putExtra("weekday", target.get(Calendar.DAY_OF_WEEK));
-        Alarm_intent.putExtra("hour", target.get(Calendar.HOUR_OF_DAY));
-        Alarm_intent.putExtra("minute", target.get(Calendar.MINUTE));
-        Alarm_intent.putExtra("Request_code", requestcode);
-        Alarm_intent.putExtra("NotificationID", requestcode);
-        Alarm_intent.putExtra("poses", intent.getStringExtra("poses"));
+        Alarm_intent.putExtras(intent);
         Alarm_intent.setAction("ALARM_ACTION");
 
         PendingIntent pendingIntent = PendingIntent.getBroadcast(context, requestcode, Alarm_intent, PendingIntent.FLAG_IMMUTABLE|PendingIntent.FLAG_UPDATE_CURRENT);
-
-
-
 
 
         if (alarmManager != null){
             alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, target.getTimeInMillis(), pendingIntent);
 
         }
-        Log.d("resetting_Alarm", "success");
+        Log.d("resetting_Alarm", Alarm_intent.getExtras().toString());
+
         Log.d("target", String.valueOf(target.get(Calendar.DAY_OF_MONTH)) + " " + String.valueOf(target.get(Calendar.DAY_OF_WEEK))
          + " " + String.valueOf(target.get(Calendar.HOUR_OF_DAY)) + " " + String.valueOf(target.get(Calendar.MINUTE)));
 

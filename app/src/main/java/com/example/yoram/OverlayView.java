@@ -32,7 +32,7 @@ public class OverlayView extends View {
     private String overlayText;
     private Paint textPaint;
     private Handler handler;
-    public static int count = 60;
+    public static int count = 15;
     public String[] yoga_array = {"전사자세", "다리당기기", "코브라자세"};
     private HashMap<String, String> yogamap;
     public ArrayList<Integer> yoga_id_array;
@@ -109,7 +109,7 @@ public class OverlayView extends View {
             setOverlayText("남은 시간 : " + count--);
         } else {
             setOverlayText("다음 동작으로 넘어갑니다.");
-            count = 60; // 카운트 재설정
+            count = 15; // 카운트 재설정
             yoga_count++;
         }
     }

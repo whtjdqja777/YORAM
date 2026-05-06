@@ -26,11 +26,18 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="이번달은 총 "
+                android:textSize="20dp"
+                android:textAppearance="@style/explain_text"/>
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:id="@+id/continuous_day"
+            android:text="0"
             android:layout_marginRight="5dp"
             android:textSize="35dp"
             android:textAppearance="@style/explain_text"
@@ -38,7 +45,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="일 연속으로 요가를 수행 했어요!"
+            android:text="일 요가를 수행 했어요!"
             android:textSize="20dp"
             android:textAppearance="@style/explain_text"/>
     </LinearLayout>
@@ -50,6 +57,23 @@
             app:mcv_showOtherDates="all"
             app:mcv_selectionColor="#00F0FF" />
 
-
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+            <TextView
+                android:id="@+id/progress_tv"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="진행도: "/>
+        <com.google.android.material.progressindicator.LinearProgressIndicator
+            android:id="@+id/progress_bar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:trackThickness="8dp"
+            app:trackCornerRadius="4dp"
+            app:indicatorColor="#00F0FF"
+            app:trackColor="#5182FF" />
+        </LinearLayout>
 </LinearLayout>
 </FrameLayout>

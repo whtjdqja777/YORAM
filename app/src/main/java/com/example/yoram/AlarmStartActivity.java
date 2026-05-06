@@ -23,42 +23,15 @@ public class AlarmStartActivity extends AppCompatActivity {
 
         start_yoga = findViewById(R.id.start_yoga);
         Intent intent = getIntent();
-        reset_Fail_Alarm(intent);
+//        reset_Fail_Alarm(intent);
 
         start_yoga.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Calendar calendar = Calendar.getInstance();
-
-                int YEAR = intent.getIntExtra("YEAR", 0);
-                int MONTH = intent.getIntExtra("MONTH", 0);
-                int weekday = intent.getIntExtra("weekday", -1);
-                int hour = intent.getIntExtra("hour", 0);
-                int minute = intent.getIntExtra("minute", 0);
-                int Request_code = intent.getIntExtra("Request_code", -1);
-                String poses = intent.getStringExtra("poses");
-                Log.d("MONTHINRAW", String.valueOf(MONTH));
-
-                calendar.set(Calendar.YEAR, YEAR);
-                calendar.set(Calendar.MONTH, MONTH);
-//                calendar.set(Calendar.DAY_OF_WEEK, weekday);
-                //DAY_OF_MONTH는 오늘날짜가 default -> 이게 엑티비티가 실행이 05_31에 되고(켈린더 월 기준)
-                //05달에는 31일이
-                calendar.set(Calendar.DAY_OF_MONTH, 15);
-                calendar.set(Calendar.HOUR_OF_DAY, hour);
-                calendar.set(Calendar.MINUTE, minute);
-
-
-
-                Log.d("MONTHINSTART", String.valueOf(calendar.get(Calendar.MONTH)));
+                reset_Fail_Alarm(intent);
 
                 Intent To_Yoga_intent = new Intent(AlarmStartActivity.this, YogaActivity.class);
-
-                To_Yoga_intent.putExtra("YEAR", calendar.get(Calendar.YEAR));
-                To_Yoga_intent.putExtra("MONTH", calendar.get(Calendar.MONTH));
-//                To_Yoga_intent.putExtra("weekday", String.valueOf(intent.getIntExtra("weekday", -1)));
-                To_Yoga_intent.putExtra("Request_code", Request_code);
-                To_Yoga_intent.putExtra("poses", intent.getStringExtra("poses"));
+                To_Yoga_intent.putExtras(intent);
                 startActivity(To_Yoga_intent);
                 finish();
             }
@@ -70,7 +43,7 @@ public class AlarmStartActivity extends AppCompatActivity {
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
-        reset_Fail_Alarm(intent);// 클릭 안해도 다음주 실패 알람은 설정해야 됨
+//        reset_Fail_Alarm(intent);// 클릭 안해도 다음주 실패 알람은 설정해야 됨
     }
 
     private void reset_Fail_Alarm(Intent intent){
@@ -94,12 +67,7 @@ public class AlarmStartActivity extends AppCompatActivity {
 
 
         Intent reset_Fail_intent = new Intent(this, FailReceiver.class);
-        reset_Fail_intent.putExtra("weekday", intent.getIntExtra("weekday", -1));
-        reset_Fail_intent.putExtra("hour", intent.getIntExtra("hour", 0));
-        reset_Fail_intent.putExtra("minute", intent.getIntExtra("minute", 0));
-        reset_Fail_intent.putExtra("Request_code", requestcode);
-        reset_Fail_intent.putExtra("NotificationID", requestcode);
-        reset_Fail_intent.putExtra("poses", intent.getStringExtra("poses"));
+        reset_Fail_intent.putExtras(intent);
         reset_Fail_intent.setAction("FAIL_ACTION");
         Log.d("reset_Fail_intent", reset_Fail_intent.getExtras().toString());
         PendingIntent reset_fail_pendingIntent = PendingIntent.getBroadcast(this, requestcode, reset_Fail_intent, PendingIntent.FLAG_IMMUTABLE| PendingIntent.FLAG_UPDATE_CURRENT);
