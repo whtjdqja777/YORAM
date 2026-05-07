@@ -92,6 +92,8 @@ public class PoseClassifier implements MideaPipePosepredict.PoseLandmarkerListen
     private HashMap<String, ArrayList<Float>> Cobra_Angle_HashMap = new HashMap<>();
     public int success = 0;
     public int fail = 1;
+
+    private String Current_pose = "";
     ImageProcessingOptions options;
     public PoseClassifier(Context context){
         this.context = context;
@@ -121,7 +123,7 @@ public class PoseClassifier implements MideaPipePosepredict.PoseLandmarkerListen
         For_Back_Criterion.put("ratio", new HashMap<>());
 
         For_Back_Criterion.get("angle").put("max_range", 65F);
-        For_Back_Criterion.get("angle").put("min_range", 30F);
+        For_Back_Criterion.get("angle").put("min_range", 10F);
         For_Back_Criterion.get("ratio").put("max_range", 10.5F);
         For_Back_Criterion.get("ratio").put("min_range", 2.5F);
 
@@ -193,32 +195,29 @@ public class PoseClassifier implements MideaPipePosepredict.PoseLandmarkerListen
         Boolean Calculate_result = false;
         if (result.landmarks().size() > 0){
             landmarks = result.landmarks().get(0);
+            Log.d("Current_pose: ", String.valueOf(Current_pose));
+            if (Current_pose.equals("warrior1")){
+                Calculate_result = CheckWarrior(landmarks);
+                Log.d("Current_pose", "warrior1");
+            } else if (Current_pose.equals("for_back_pose")) {
+                Calculate_result = CheckFor_Back(landmarks);
+                Log.d("Current_pose", "for_back_pose");
+            } else if (Current_pose.equals("cobra_pose")) {
+                Calculate_result = Check_Cobra(landmarks);
+                Log.d("Current_pose", "cobra_pose");
+            }
 
-//        List<NormalizedLandmark> upper_body = result.landmarks().get(0).subList(11,17);
-//        List<NormalizedLandmark> lower_body = result.landmarks().get(0).subList(23, 28);
 
-//            for (Integer tmp : mappingindex.keySet()) {
-//                Log.d(mappingindex.get(tmp) + String.valueOf(tmp), String.valueOf(result.landmarks().get(0).get(tmp)));
-//                //        CheckFor_Back(landmarks);
-//            }
-            Calculate_result = CheckWarrior(landmarks);
-//            Boolean Calculate_result = Check_Cobra(landmarks);
             if (Calculate_result){
-                Log.d("Cobra_통과", "각도 비율 통과");
+                Log.d("통과", "각도 비율 통과");
                 success +=1;
             }else{
                 fail +=1;
-                Log.d("Cobras_불통", "불통");
+                Log.d("불통", "불통");
             }
             Log.d("hip_knee_x", String.valueOf(hip_knee));
 
 
-
-
-//            for(String key : AllAngles.keySet()){
-//                Log.d(key + " ", String.valueOf(AllAngles.get(key)));
-//
-//            }
         }else{
             Log.d("검출 실패", "검출 실패");
         }
@@ -352,19 +351,28 @@ public class PoseClassifier implements MideaPipePosepredict.PoseLandmarkerListen
 
     }
 
-    private Boolean Warrior_Upper_Lower_Ratio(List<NormalizedLandmark> landmarks){
+    private Boolean Warrior_Upper_Lower_Ratio(List<NormalizedLandmark> landmarks){//이 로직은 카메라를 어떯게 세우느냐에 따라서 또는 주변환경에 영향을 많이 받을거 같음
+        //ex)집이 좁아서 발목이 잘려 인식되어 잘못 인식 되는 경우 또는 케메라를 비스듬히 세워놓아 어깨 대비 발목 비율이 훨씬 커지는 경우
         //11, 12 -> 어께
         //27, 28 -> 발목
+        if(landmarks.get(12).visibility().orElse(0f) < 0.5 || landmarks.get(11).visibility().orElse(0f) < 0.5){
+            Log.d("어께 인식률", "오른쪽: " + String.valueOf(landmarks.get(12).visibility().orElse(0f)) + "왼쪽: "+ landmarks.get(11).visibility().orElse(0f));
+            return true;
+        }else if(landmarks.get(28).visibility().orElse(0f) < 0.5 ||landmarks.get(27).visibility().orElse(0f) < 0.5){
+            Log.d("발목 인식률", "오른쪽: " + String.valueOf(landmarks.get(28).visibility().orElse(0f)) + "왼쪽: "+ landmarks.get(27).visibility().orElse(0f));
+            return true;
+        }
         double upper = Math.abs(landmarks.get(12).x() - landmarks.get(11).x());
         double lower = Math.abs(landmarks.get(28).x() - landmarks.get(27).x());
+        //여기서 visibility로  발목, 어께의 가시성이 0.5 이상 안나오면 그냥 비율 통과로 넘기기
 
-        Log.d("하체 대비 상체 비율", String.valueOf(upper/lower));
-        double upper_lower_ratio = upper/lower;
+        Log.d("하체 대비 상체 비율", String.valueOf(upper/lower));//이거 로그에 찍히는게 3.5 ~ 9 이렇게 찍히는데
+        double upper_lower_ratio = upper/lower; //
         if (WarriorCriterion.get("warrior").get("상하체 비율").get("최소") <= upper_lower_ratio
                 && upper_lower_ratio <= WarriorCriterion.get("warrior").get("상하체 비율").get("최대")){
             return true;
 
-        }else return false;
+        }else return true;
     }
 
 
@@ -427,8 +435,10 @@ public class PoseClassifier implements MideaPipePosepredict.PoseLandmarkerListen
             float right_ankle_x = landmarks.get(28).x();
             float right_ankle_y = landmarks.get(28).y();
             for_back_angle_result = CalculateAngle(right_hip_x, right_hip_y, right_knee_x, right_knee_y,right_ankle_x,right_ankle_y);
+            Log.d("for_back_angle", String.valueOf(for_back_angle_result));
             // 골반-무릅 위치
             ratio_result = Math.abs(right_knee_x - right_hip_x) / Math.abs(right_ankle_x - right_hip_x);
+            Log.d("ratio_result", String.valueOf(ratio_result));
 //            hip_knee.get("골반").add(right_hip_x);
 //            hip_knee.get("무릎").add(right_knee_x);
 //            hip_knee.get("발목").add(right_ankle_x);
@@ -448,8 +458,8 @@ public class PoseClassifier implements MideaPipePosepredict.PoseLandmarkerListen
             Log.d("불통", "각도 불통");
             return false;
         }else {
-            Log.d("불통", "비율 불통");
-            return false;
+            Log.d("불통", "비율 불통(비율의 오류율이 높아 통과 시킴)");
+            return true;
         }
 
 
@@ -471,7 +481,10 @@ public class PoseClassifier implements MideaPipePosepredict.PoseLandmarkerListen
         float Whole_body_Angle;
         float Arm_Angle;
         float Lower_Angle;
-        if (Selectpoint){
+        if (Selectpoint){// 렌드마커별 visibility 보고 안내를 줄지, 그냥 통과를 시킬지 -> 지금 몸 전체 각도, 팔 각도, 하체 각도 하나라도 만족 못하면 통과가 안됨
+            //그리고 코브라자세를 했을때 세로 화면에서는 다리쪽이 짤리는경우가 많음 -> 가로화면으로 테스트도 필요
+            // 이건 내일 거실에서 테스트 ㄱㄱ
+
             Whole_body_Angle = CalculateAngle(landmarks.get(11).x(), landmarks.get(11).y(),
                     landmarks.get(23).x(), landmarks.get(23).y(),
                     landmarks.get(25).x(), landmarks.get(25).y());
@@ -543,8 +556,8 @@ public class PoseClassifier implements MideaPipePosepredict.PoseLandmarkerListen
             Log.d("hip_knee_ratio 통과", String.valueOf(Cobra_ratio));
             return true;
         }else {
-            Log.d("hip_knee_ratio 불통", String.valueOf(Cobra_ratio));
-            return false;
+            Log.d("hip_knee_ratio 불통(테스트를 위해 true 리턴)", String.valueOf(Cobra_ratio));
+            return true;
         }
     }
 
@@ -566,4 +579,7 @@ public class PoseClassifier implements MideaPipePosepredict.PoseLandmarkerListen
         return Selectpoint;
     }
 
+    public void setpose(String pose){
+        this.Current_pose = pose;
+    }
 }

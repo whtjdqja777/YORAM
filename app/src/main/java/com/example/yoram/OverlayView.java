@@ -79,7 +79,7 @@ public class OverlayView extends View {
 //        Log.d("PoseName", String.valueOf(PoseName));
 
 
-        updateTextPeriodically();
+//        updateTextPeriodically();
         invalidate();
     }
 
@@ -103,7 +103,7 @@ public class OverlayView extends View {
         // 동작선택 화면에서 자세를 선택하고 버튼을 클릭하면 callback으로 OverlayView에 선택된 자세정보와 갯수 정보 넘기면됨
         yoga_image = yoga_id_array.get(yoga_count);
         tmp_yoga_image = new Integer(yoga_image);
-
+        Log.d("upyogaImage: ", String.valueOf(yoga_image));
         setOverlayImage(yoga_image);//yoga_count 기본값이 0이라 일단 출력이 되긴함
         if (count > 0) {
             setOverlayText("남은 시간 : " + count--);
@@ -172,14 +172,17 @@ public class OverlayView extends View {
             pose_name = getResources().getResourceEntryName(yoga_pose_overlay_id);
             Log.d("PoseName_Array : pose_name 비교 ", "PoseName_Array:" +  PoseName_Array + "pose_name:" + pose_name);
             if (PoseName_Array.contains(pose_name)){
-
+                Log.d("yoga_id_poseNameTrue", getResources().getResourceEntryName(yoga_pose_overlay_id));
+                Log.d("yoga_id_pose", yoga_pose_overlay_id.toString());
             }else{
                 Log.d("yoga_id_poseName", getResources().getResourceEntryName(yoga_pose_overlay_id));
                 yoga_id_array.remove(yoga_pose_overlay_id);
                 PoseNameMap.remove(yoga_pose_overlay_id);
             }
         }
+        updateTextPeriodically();
         Log.d("yoga_id_array", String.valueOf(yoga_id_array));
+
     }
 
 }

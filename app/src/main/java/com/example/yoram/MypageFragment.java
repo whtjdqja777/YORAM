@@ -254,7 +254,7 @@ public class MypageFragment extends Fragment {
             public void onDateSelected(@NonNull MaterialCalendarView widget, @NonNull CalendarDay date, boolean selected) {
                 //일단 알람 완료 갯수 가져오기
                 //이후에 알람별 완료 여부 표시하기
-                String c = date.getYear() + "_" + (date.getMonth()-1);
+                String YEAR_MONTH = date.getYear() + "_" + (date.getMonth()-1);
                 Log.d("Sellected_YEAR_MONTH: ", YEAR_MONTH);
                 Log.d("day_compledted_keys", String.valueOf(day_compledted.getAll().keySet()));
                 String Alarm_info ="";
@@ -288,7 +288,9 @@ public class MypageFragment extends Fragment {
                                     // //
                                     //에초에 날짜선택 했을때 해당 날짜의 요일에 해당 하는 day_of_week_reqeustcode
                                     //따로 빼서 여기서 쓰는게 편할 듯
-                                    JSONObject Alarm_time_obj = (JSONObject) day_Alarms_obj.get(requestcode_key);
+
+//                                    Log.d("")
+                                    JSONObject Alarm_time_obj = (JSONObject) day_Alarms_obj.get(requestcode_key);// 여기서 터짐
                                     Log.d("Alarm_time_obj: ", String.valueOf(Alarm_time_obj));
                                     if (day_Object.get(requestcode_key).equals(true)){
                                         True_Count++;

@@ -87,7 +87,9 @@ public class YogaActivity extends AppCompatActivity {
                 finish();
                 return;
             }
+
             overlayView.setPoses(poses);
+            targetPoseName = overlayView.getCurrenPose();
             if (overlayView.yoga_id_array.isEmpty()){
                 Toast.makeText(this, "오류: 요가 목록이 없습니다.", Toast.LENGTH_SHORT).show();
                 finish();
@@ -104,6 +106,7 @@ public class YogaActivity extends AppCompatActivity {
             ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.CAMERA}, CAMERA_PERMISSION_REQUEST_CODE);
         }
         poseClassifier = new PoseClassifier(this);
+        poseClassifier.setpose(targetPoseName);
 
     }
 
@@ -130,7 +133,7 @@ public class YogaActivity extends AppCompatActivity {
     private void bindPreview() {
         Preview preview = new Preview.Builder().build();
         CameraSelector cameraSelector = new CameraSelector.Builder()
-                .requireLensFacing(CameraSelector.LENS_FACING_BACK).build();
+                .requireLensFacing(CameraSelector.LENS_FACING_FRONT).build();
         preview.setSurfaceProvider(viewFinder.getSurfaceProvider());
 
         ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()
@@ -167,15 +170,16 @@ public class YogaActivity extends AppCompatActivity {
 //                            true
 //                    );
 //                    overlayView.setOverlayImage(rotatedBitmap);//imageproxy 프레임 임시 투영
-
+                    Log.d("targetPoseName", targetPoseName);
                     Log.d("poseClassifier.success", String.valueOf(poseClassifier.success));
                     Log.d("poseClassifier.fail", String.valueOf(poseClassifier.fail));
-                    if (true){//poseClassifier.success >= poseClassifier.fail
+                    if (poseClassifier.success >= poseClassifier.fail){//
                         overlayView.updateTextPeriodically();// 오버레이는 위 조건이 만족하여 15번 실행되면 바뀌게 되어 있음
                         Log.d("자세 성공", "자세 성공");
                         String tmpnewtarget = overlayView.getCurrenPose();
                         if (!targetPoseName.equals(tmpnewtarget)) {// update중 yoga_count가 증가하면 검사하는 요가 자세가 바뀜
                             targetPoseName = tmpnewtarget;//그래서 현재의 타겟 포즈와 새로운 포즈가 다르면 다음 동작으로 넘어간거고 바뀐 포즈로 바꿔줌
+                            poseClassifier.setpose(targetPoseName);//pose가 바뀌었음으로 poseClassifier에서 판단해야할 pose도 바꿔줌
                         }
                     }
 
