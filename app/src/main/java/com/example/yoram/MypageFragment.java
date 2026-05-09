@@ -67,6 +67,7 @@ public class MypageFragment extends Fragment {
 
     TextView explain_tv1;
     TextView explain_tv2;
+    TextView progress_tv2;
 
     Calendar calendar;
     String YEAR_MONTH;
@@ -126,6 +127,7 @@ public class MypageFragment extends Fragment {
         String currentTheme = ThemeUtil.modLoad(requireContext());
         explain_tv1 = view.findViewById(R.id.explain_tv1);
         explain_tv2 = view.findViewById(R.id.explain_tv2);
+        progress_tv2 = view.findViewById(R.id.progress_tv2);
         calendarView = view.findViewById(R.id.calendarView);
         calendarView.setDateTextAppearance(android.R.style.TextAppearance_DeviceDefault_Small);
         if (currentTheme.equals(ThemeUtil.DARK_MODE)){
@@ -254,7 +256,8 @@ public class MypageFragment extends Fragment {
         TextView progressTextview = getActivity().findViewById(R.id.progress_tv);
         int progress = (thismonth_alarm_count == 0) ? 0: (totaltrue_count*100) / thismonth_alarm_count;
 
-        progressTextview.setText("진행도: " + progress + "%" + thismonth_alarm_count + "개 중" +totaltrue_count + "개 수행 했습니다!");
+        progressTextview.setText(" 진행도: " + progress + "% ");
+        progress_tv2.setText(thismonth_alarm_count + "개 중" +totaltrue_count + "개 수행 했습니다!");
         pb.setProgress(progress);
     }
     private void Days_Pop_up(){

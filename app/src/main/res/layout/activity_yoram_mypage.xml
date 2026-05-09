@@ -67,7 +67,16 @@
                 android:id="@+id/progress_tv"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:textAppearance="@style/explain_text"
+                android:layout_gravity="center"
                 android:text="진행도: "/>
+            <TextView
+                android:id="@+id/progress_tv2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="@style/explain_text"
+                android:layout_gravity="center"
+                />
         <com.google.android.material.progressindicator.LinearProgressIndicator
             android:id="@+id/progress_bar"
             android:layout_width="match_parent"

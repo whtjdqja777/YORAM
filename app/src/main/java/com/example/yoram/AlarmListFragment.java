@@ -24,54 +24,35 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.security.Key;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * A simple {@link Fragment} subclass.
- * Use the {@link AlarmListFragment#newInstance} factory method to
- * create an instance of this fragment.
- */
 public class AlarmListFragment extends Fragment {
 
-    // TODO: Rename parameter arguments, choose names that match
-    // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
     private static final String ARG_PARAM1 = "param1";
     private static final String ARG_PARAM2 = "param2";
 
-    // TODO: Rename and change types of parameters
     private String mParam1;
     private String mParam2;
 
-    private ArrayList<AlarmItem> alarmList;
-    private AlarmAdapter adapter;
+    private ArrayList<DayGroup> dayGroupList;
+    private DayGroupAdapter adapter;
     private RecyclerView recyclerView;
     private Calendar calendar;
     private String YEAR_MONTH;
     private SharedPreferences day_of_weeks_request_code;
     private SharedPreferences Check_completed;
     private SharedPreferences ALARM_History;
+
     public AlarmListFragment() {
         // Required empty public constructor
     }
 
-    /**
-     * Use this factory method to create a new instance of
-     * this fragment using the provided parameters.
-     *
-     * @param param1 Parameter 1.
-     * @param param2 Parameter 2.
-     * @return A new instance of fragment AlarmList.
-     */
-    // TODO: Rename and change types and number of parameters
     public static AlarmListFragment newInstance(String param1, String param2) {
         AlarmListFragment fragment = new AlarmListFragment();
         Bundle args = new Bundle();
@@ -100,186 +81,155 @@ public class AlarmListFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_alarm_list, container, false);
 
-
         recyclerView = view.findViewById(R.id.alarmRecyclerView);
-        alarmList = new ArrayList<>();
-        adapter = new AlarmAdapter(alarmList, alarmItem -> {
-            // 알람 삭제 로직 구현
-            deleteAlarm(alarmItem);
-            Log.d("dayofweek_requestcode", String.valueOf(day_of_weeks_request_code.getAll()));
-
+        dayGroupList = new ArrayList<>();
+        
+        adapter = new DayGroupAdapter(dayGroupList, alarmItem -> {
+            try {
+                deleteAlarm(alarmItem);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
         });
+
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         recyclerView.setAdapter(adapter);
+
         try {
             loadAlarmList();
-            Log.d("AlarmList", String.valueOf(alarmList));
         } catch (JSONException e) {
             throw new RuntimeException(e);
         }
         return view;
     }
 
-    @Override
-    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
-
-    }
-
     public void loadAlarmList() throws JSONException {
-        alarmList.clear();
+        dayGroupList.clear();
+        HashMap<String, ArrayList<AlarmItem>> map = new HashMap<>();
+
         Map<String, ?> getAll = day_of_weeks_request_code.getAll();
         for(String Day_key : getAll.keySet()){
-
             Set<String> dayset = day_of_weeks_request_code.getStringSet(Day_key, new HashSet<>());
+            ArrayList<AlarmItem> listForDay = new ArrayList<>();
             for (String day : dayset){
                 JSONObject object = new JSONObject(day);
-                Iterator<String> key = object.keys();
-                while (key.hasNext()){
-                    String requestCodeKey = key.next();
+                Iterator<String> keyIterator = object.keys();
+                while (keyIterator.hasNext()){
+                    String requestCodeKey = keyIterator.next();
                     JSONObject times_and_poses = (JSONObject) object.get(requestCodeKey);
-
-                    Log.d("times_and_poses", String.valueOf(times_and_poses));
                     JSONArray poses = times_and_poses.getJSONArray("poses");
-                    Log.d("poses", String.valueOf(poses));
-
-//                    Log.d("pose", pose);
-                    alarmList.add(new AlarmItem(Day_key, requestCodeKey, times_and_poses.getInt("Hour"),times_and_poses.getInt("Minute"), poses));
-
+                    listForDay.add(new AlarmItem(Day_key, requestCodeKey, times_and_poses.getInt("Hour"), times_and_poses.getInt("Minute"), poses));
                 }
-
             }
+            if (!listForDay.isEmpty()) {
+                map.put(Day_key, listForDay);
+            }
+        }
 
+        for (int i = 1; i <= 7; i++) {
+            String dayKey = String.valueOf(i);
+            if (map.containsKey(dayKey)) {
+                dayGroupList.add(new DayGroup(dayKey, map.get(dayKey)));
+            }
         }
         adapter.notifyDataSetChanged();
     }
 
     private void deleteAlarm(AlarmItem alarmItem) throws JSONException {
-
-        HashSet newSet = new HashSet<>();
         String deleteRequestCode = alarmItem.getRequest_Code();
-        Log.d("삭제할 Request_code", deleteRequestCode);
-        for (int i = 0; i < alarmList.size(); i++){
+        String dayKey = alarmItem.getDay();
+        
+        Set<String> oldset = day_of_weeks_request_code.getStringSet(dayKey, new HashSet<>());
+        HashSet<String> newSet = new HashSet<>();
 
-            if (alarmList.get(i).getRequest_Code().equals(deleteRequestCode) ){
-                alarmList.remove(i);
-                adapter.notifyDataSetChanged();
-                Set<String> oldset = day_of_weeks_request_code.getStringSet(alarmItem.getDay(), new HashSet<>());
-                day_of_weeks_request_code.edit().remove(alarmItem.getDay()).apply();
-
-                for (String ob :  oldset){
-
-                    JSONObject object = new JSONObject(ob);
-
-                    if (object.has(deleteRequestCode)){
-                        Log.d("delete_object", object.toString());
-                        ALARM_History.edit().putString(deleteRequestCode, String.valueOf(object.getJSONObject(deleteRequestCode))).apply();
-
-                    }else{
-                        newSet.add(ob);
-                    }
-
-                    }
+        for (String ob : oldset) {
+            JSONObject object = new JSONObject(ob);
+            if (object.has(deleteRequestCode)) {
+                ALARM_History.edit().putString(deleteRequestCode, String.valueOf(object.getJSONObject(deleteRequestCode))).apply();
+            } else {
+                newSet.add(ob);
             }
         }
-        if (!newSet.isEmpty()){
-            day_of_weeks_request_code.edit().putStringSet(alarmItem.getDay(), newSet).apply();
 
+        if (newSet.isEmpty()) {
+            day_of_weeks_request_code.edit().remove(dayKey).apply();
+        } else {
+            day_of_weeks_request_code.edit().putStringSet(dayKey, newSet).apply();
         }
+
         try {
             deleteAlarmRequestCode(Integer.parseInt(deleteRequestCode));
-        }catch (Exception e){
+        } catch (Exception e) {
             Log.e("삭제 오류", e.toString());
         }
-        Delete_requestcode_From_Check_completed(alarmItem.getDay(), deleteRequestCode, alarmItem.getHour(), alarmItem.getMinute());
+
         //Check_completed -> 날짜별 알람 삭제
+        Delete_requestcode_From_Check_completed(dayKey, deleteRequestCode, alarmItem.getHour(), alarmItem.getMinute());
+        
+        loadAlarmList();
     }
-    private void deleteAlarmRequestCode (int RequstedCode){
 
-        Log.d("삭제 requsetcode 전달", String.valueOf(RequstedCode));
-        Intent intent = new Intent(requireContext(), AlarmReceiver.class );
+    private void deleteAlarmRequestCode(int RequestedCode) {
+        Intent intent = new Intent(requireContext(), AlarmReceiver.class);
         intent.setAction("ALARM_ACTION");
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(requireContext(), RequstedCode, intent, PendingIntent.FLAG_IMMUTABLE|PendingIntent.FLAG_UPDATE_CURRENT );
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(requireContext(), RequestedCode, intent, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
 
-        Intent Fail_intent = new Intent(requireContext(), FailReceiver.class );
-
-        PendingIntent Fail_pendingIntent = PendingIntent.getBroadcast(requireContext(), RequstedCode, Fail_intent, PendingIntent.FLAG_IMMUTABLE|PendingIntent.FLAG_UPDATE_CURRENT );
+        Intent Fail_intent = new Intent(requireContext(), FailReceiver.class);
+        PendingIntent Fail_pendingIntent = PendingIntent.getBroadcast(requireContext(), RequestedCode, Fail_intent, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
 
         AlarmManager alarmManager = (AlarmManager) requireContext().getSystemService(Context.ALARM_SERVICE);
-        if (alarmManager != null){
+        if (alarmManager != null) {
             alarmManager.cancel(pendingIntent);
             alarmManager.cancel(Fail_pendingIntent);
-
             pendingIntent.cancel();
             Fail_pendingIntent.cancel();
-            Log.d("알람, 실패 알람 삭제", pendingIntent.toString());
         }
-
-
     }
+
     private void Delete_requestcode_From_Check_completed(String day, String RequestCode, int HOUR, int MINUTE) throws JSONException {
-
-
-
+        //day는 요일정보
         Calendar alarmitem_calendar = Calendar.getInstance();
 
-        for(String YEAR_MONTH : Check_completed.getAll().keySet()) {
+        for (String key : Check_completed.getAll().keySet()) {
             ArrayList<String> delete_dates = new ArrayList<>();
-            String[] split = YEAR_MONTH.split("_");
+            String[] split = key.split("_");
             if (split.length < 2) continue;
             int YEAR = Integer.parseInt(split[0]);
             int MONTH = Integer.parseInt(split[1]);
+            
             alarmitem_calendar.set(Calendar.YEAR, YEAR);
             alarmitem_calendar.set(Calendar.MONTH, MONTH);
-
             int lastday = alarmitem_calendar.getActualMaximum(Calendar.DAY_OF_MONTH);
 
-            for (int i = 1; i <= lastday; i++) {// YEAR_MONTH 설정 한 순간 부터
-                alarmitem_calendar.set(YEAR, MONTH, i, HOUR, MINUTE, 0);//i는 1부터 시작함
+            for (int i = 1; i <= lastday; i++) { // i는 1부터 시작함
+                // YEAR_MONTH 설정 한 순간 부터
+                alarmitem_calendar.set(YEAR, MONTH, i, HOUR, MINUTE, 0);
                 if (Integer.parseInt(day) == alarmitem_calendar.get(Calendar.DAY_OF_WEEK)
-                && alarmitem_calendar.getTimeInMillis() > System.currentTimeMillis()) {
+                        && alarmitem_calendar.getTimeInMillis() > System.currentTimeMillis()) {
                     //여기서 날짜 자체를 제외해도 되는 이유가 삭제 하고자하는 requestcode가 1개 이기 때문에
-                    //
                     delete_dates.add(String.valueOf(i));
                 }
-
             }
 
-
-            //이거는 해당 requestcode 1개를 기준으로 요일 날짜에 속해 있는것들을 지우는거기 때문에
-            //
-
-            Set<String> Check_completed_set = Check_completed.getStringSet(YEAR_MONTH, new HashSet<>());
+            Set<String> Check_completed_set = Check_completed.getStringSet(key, new HashSet<>());
             Set<String> newSet = new HashSet<>();
 
             for (String JSONString : Check_completed_set) {
                 JSONObject object = new JSONObject(JSONString);
-
                 for (String delete_day : delete_dates) {
-
                     if (object.has(delete_day)) {
-                        JSONObject newdayobj = (JSONObject) object.get(delete_day);
-                        newdayobj.remove(RequestCode);
-                        object.remove(delete_day);
-                        if (newdayobj.length() > 0) {
-                            object.put(delete_day, newdayobj);
+                        JSONObject dayObj = object.getJSONObject(delete_day);
+                        dayObj.remove(RequestCode);
+                        if (dayObj.length() == 0) {
+                            object.remove(delete_day);
                         }
-                    } else {
-                        Log.d("해당 키가 없습니다.", delete_day);
                     }
-
-
                 }
                 newSet.add(object.toString());
             }
-
-            Log.d("newSet", String.valueOf(newSet));
-            Check_completed.edit().putStringSet(YEAR_MONTH, newSet).apply();
-            Log.d("Check_completed", String.valueOf(Check_completed.getAll()));
+            Check_completed.edit().putStringSet(key, newSet).apply();
         }
-
     }
 }
