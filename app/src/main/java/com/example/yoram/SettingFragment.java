@@ -21,6 +21,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
+import android.widget.RadioButton;
 import android.widget.Toast;
 
 import java.util.ArrayList;
@@ -74,6 +75,10 @@ public class SettingFragment extends Fragment {
     Button twopage;
     Button threepage;
 
+    RadioButton Light_Theme_button;
+    RadioButton Dark_Theme_button;
+
+    String ThemeMod = "";
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -84,6 +89,7 @@ public class SettingFragment extends Fragment {
             mParam1 = getArguments().getString(ARG_PARAM1);
             mParam2 = getArguments().getString(ARG_PARAM2);
         }
+
     }
 
 
@@ -105,13 +111,20 @@ public class SettingFragment extends Fragment {
                 AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
                 LayoutInflater inflater = getLayoutInflater();
                 View dialogView = inflater.inflate(R.layout.activity_moddialog, null); // 여기서 moddialog.xml을 인플레이션합니다.
-
+                Light_Theme_button = dialogView.findViewById(R.id.r_btn_light);
+                Light_Theme_button.setOnClickListener(v1 ->{
+                    ThemeMod = "light";
+                });
+                Dark_Theme_button = dialogView.findViewById(R.id.r_btn_dark);
+                Dark_Theme_button.setOnClickListener(v1 ->{
+                    ThemeMod = "dark";
+                });
                 builder.setView(dialogView)
                         .setTitle("테마")
                         .setPositiveButton("확인", new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int which) {
                                 // 확인 버튼을 눌렀을 때 수행할 동작
-                                ThemeUtil.toggleTheme(getActivity().getApplicationContext());
+                                ThemeUtil.toggleTheme(getActivity().getApplicationContext(), ThemeMod);
                                 dialog.dismiss();
                             }
                         });

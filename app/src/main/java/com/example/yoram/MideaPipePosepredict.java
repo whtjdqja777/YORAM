@@ -29,6 +29,7 @@ public class MideaPipePosepredict {
     private static final int MODEL_FULL = 1;
     private static final int MODEL_HEAVY = 2;
 
+
     private static final Map<Integer, String> MODEL_NAMES = new HashMap<Integer, String>();
     static {
         MODEL_NAMES.put(MODEL_LITE, "pose_landmarker_lite.task");
@@ -37,7 +38,7 @@ public class MideaPipePosepredict {
     }
 
     public interface PoseLandmarkerListener {
-        void onResult(PoseLandmarkerResult result, int imageWidth, int imageHeight);
+        void onResult(PoseLandmarkerResult result, int imageWidth, int imageHeight, RunningMode runningMode);
         void onError(String error);
     }
 
@@ -73,7 +74,7 @@ public class MideaPipePosepredict {
                 .setMinPosePresenceConfidence(0.5f)// 검출된 자세가 실제로 존재한다는 최소 신뢰도
                 .setMinTrackingConfidence(0.5f) // 이전 프레임들 참고한 tracking 정보를 활용한 신뢰도
                 .setResultListener((result, inputImage) -> {
-                    listener.onResult(result, inputImage.getWidth(), inputImage.getHeight());
+                    listener.onResult(result, inputImage.getWidth(), inputImage.getHeight(), RunningMode.LIVE_STREAM);
                 })
                 .setErrorListener(error -> {
                     listener.onError(error.getMessage() != null ? error.getMessage():"알 수 없는 에러");

@@ -61,6 +61,7 @@ public class YogaActivity extends AppCompatActivity {
     private long lastAnalyzedTimestamp = 0;
     private int imageSize = 224;
     private String targetPoseName = "stand"; // 목표 요가 자세 이름
+
     YogaViewModel yogaViewModel;
     int current_yoga_id = 0;
     PoseClassifier poseClassifier;
@@ -68,7 +69,7 @@ public class YogaActivity extends AppCompatActivity {
     ImageProcessingOptions options;
     SharedPreferences Check_completed;
     Intent intent;
-
+    int rotation = 0;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -100,13 +101,7 @@ public class YogaActivity extends AppCompatActivity {
         }
 
 
-        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
-            startCamera();
-        } else {
-            ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.CAMERA}, CAMERA_PERMISSION_REQUEST_CODE);
-        }
-        poseClassifier = new PoseClassifier(this);
-        poseClassifier.setpose(targetPoseName);
+
 
     }
 
@@ -133,7 +128,7 @@ public class YogaActivity extends AppCompatActivity {
     private void bindPreview() {
         Preview preview = new Preview.Builder().build();
         CameraSelector cameraSelector = new CameraSelector.Builder()
-                .requireLensFacing(CameraSelector.LENS_FACING_FRONT).build();
+                .requireLensFacing(CameraSelector.LENS_FACING_BACK).build();
         preview.setSurfaceProvider(viewFinder.getSurfaceProvider());
 
         ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()
@@ -154,25 +149,15 @@ public class YogaActivity extends AppCompatActivity {
                 options = ImageProcessingOptions.builder().setRotationDegrees(image.getImageInfo().getRotationDegrees()).build();
 //                Log.d("image 각도", String.valueOf(image.getImageInfo().getRotationDegrees()));
                 poseClassifier.run(mpImage, options);
+                rotation = image.getImageInfo().getRotationDegrees();
+
 
                 if (System.currentTimeMillis() - lastAnalyzedTimestamp >= 1000) {// 프레임 마다 분석 시도하지만 조건상 1초마다 실행됨
-//                    Bitmap bitmap = image.toBitmap();
-//                    Matrix matrix = new Matrix();
-//                    matrix.postRotate(image.getImageInfo().getRotationDegrees());
-//
-//                    Bitmap rotatedBitmap = Bitmap.createBitmap(
-//                            bitmap,
-//                            0,
-//                            0,
-//                            bitmap.getWidth(),
-//                            bitmap.getHeight(),
-//                            matrix,
-//                            true
-//                    );
-//                    overlayView.setOverlayImage(rotatedBitmap);//imageproxy 프레임 임시 투영
+
                     Log.d("targetPoseName", targetPoseName);
                     Log.d("poseClassifier.success", String.valueOf(poseClassifier.success));
                     Log.d("poseClassifier.fail", String.valueOf(poseClassifier.fail));
+
                     if (poseClassifier.success >= poseClassifier.fail){//
                         overlayView.updateTextPeriodically();// 오버레이는 위 조건이 만족하여 15번 실행되면 바뀌게 되어 있음
                         Log.d("자세 성공", "자세 성공");
@@ -181,24 +166,14 @@ public class YogaActivity extends AppCompatActivity {
                             targetPoseName = tmpnewtarget;//그래서 현재의 타겟 포즈와 새로운 포즈가 다르면 다음 동작으로 넘어간거고 바뀐 포즈로 바꿔줌
                             poseClassifier.setpose(targetPoseName);//pose가 바뀌었음으로 poseClassifier에서 판단해야할 pose도 바꿔줌
                         }
+                        poseClassifier.success = 0;
+                        poseClassifier.fail = 0;
                     }
 
                     poseClassifier.success = 0;
                     poseClassifier.fail = 1;
                     checkAndCompleteYoga();
-//                    String poseName = runInference(imageData);// runInference가 자세 인식하는거고 여기서 인식 후 posName이 현재 동작해야될 포즈인
-                    //targetPoseName과 같아야 OverlayView의 남은 초 수를 업데이트 해줌
-                    //모델 추론과정이 있기 때문에 비동기로 callback 써서 수정해야할 듯
-                    // 현재 targePoseName이 "stand"이고
 
-//                    if (poseName.equals(targetPoseName)) {// 모델이 출력한 poseName과 targetPoseName이 같아야 실행됨
-//                        //위에 조건문이 카운트까지 담당하고 있음
-//                        overlayView.updateTextPeriodically(); // 여기서
-//                        String tmpnewtarget = overlayView.getCurrenPose();
-//                        if (!targetPoseName.equals(tmpnewtarget)) {// update중 yoga_count가 증가하면 검사하는 요가 자세가 바뀜
-//                            targetPoseName = tmpnewtarget;//그래서 현재의 타겟 포즈와 새로운 포즈가 다르면 다음 동작으로 넘어간거고 바뀐 포즈로 바꿔줌
-//                        }
-//                    }
                     lastAnalyzedTimestamp = System.currentTimeMillis();
                 }
                 image.close();
@@ -403,10 +378,13 @@ public class YogaActivity extends AppCompatActivity {
         if (cameraProvider != null) {
             cameraProvider.unbindAll();
         }
-        SharedPreferences prefs = getSharedPreferences("yoga", MODE_PRIVATE);
-//        prefs.edit().clear().apply();
+        if(poseClassifier != null){
+            poseClassifier.close();
+        }
 
     }
+
+
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
@@ -420,5 +398,37 @@ public class YogaActivity extends AppCompatActivity {
         }
     }
 
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (cameraProvider != null) {
+            cameraProvider.unbindAll();
+        }
+        if(poseClassifier != null){
+            poseClassifier.close();
+            poseClassifier = null;
+        }
+    }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+            startCamera();
+        } else {
+            ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.CAMERA}, CAMERA_PERMISSION_REQUEST_CODE);
+        }
+        if(poseClassifier == null){
+            poseClassifier = new PoseClassifier(this);
+            poseClassifier.setpose(targetPoseName);
+            poseClassifier.setListener((LandMarkResult, imageWidth, imageHeight, Correct_landmarker_index, Incorrect_landmarker_index, runningMode) -> {
+                int correctedWidth = (rotation == 90 || rotation == 270) ? imageHeight : imageWidth;
+                int correctedHeight = (rotation == 90 || rotation == 270) ? imageWidth : imageHeight;
+                runOnUiThread(() -> {
+
+                    overlayView.setResults(LandMarkResult,correctedWidth, correctedHeight, rotation, Correct_landmarker_index, Incorrect_landmarker_index, runningMode);
+                });
+            });
+        }
+    }
 }

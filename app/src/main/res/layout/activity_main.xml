@@ -3,8 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/coordinatorlayout"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical">
+    android:layout_height="match_parent">
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab"
@@ -15,7 +14,8 @@
         android:layout_centerInParent="true"
         android:layout_marginBottom="30dp"
         android:clickable="true"
-        android:focusable="true" />
+        android:focusable="true"
+        android:elevation="6dp" />
 
     <com.example.yoram.CustomBottomNavigationView1
         android:id="@+id/customBottomBar"
@@ -24,15 +24,18 @@
         android:layout_alignParentBottom="true"
         android:background="#ff0000"
         app:labelVisibilityMode="labeled" />
+
     <FrameLayout
         android:id="@+id/main_layout2"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        />
+        android:layout_above="@id/customBottomBar" />
+
     <FrameLayout
         android:id="@+id/image_layout"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:visibility="gone">
         <ImageView
             android:id="@+id/bitmapimageview"
             android:layout_width="match_parent"

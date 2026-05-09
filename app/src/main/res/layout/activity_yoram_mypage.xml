@@ -26,12 +26,13 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center">
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="이번달은 총 "
-                android:textSize="20dp"
-                android:textAppearance="@style/explain_text"/>
+        <TextView
+            android:id="@+id/explain_tv1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="이번달은 총 "
+            android:textSize="20dp"
+            android:textAppearance="@style/explain_text"/>
 
         <TextView
             android:layout_width="wrap_content"
@@ -43,6 +44,7 @@
             android:textAppearance="@style/explain_text"
             android:textColor="#5182FF"/>
         <TextView
+            android:id="@+id/explain_tv2"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="일 요가를 수행 했어요!"

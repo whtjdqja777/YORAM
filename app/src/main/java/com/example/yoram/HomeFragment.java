@@ -21,6 +21,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.TextView;
 import android.widget.TimePicker;
 import android.widget.Toast;
 
@@ -42,6 +43,7 @@ import java.util.Map;
 import java.util.Set;
 
 public class HomeFragment extends Fragment {
+    TextView top_text;
     TimePicker timePicker;
     Button button_Set_yoga;
     String offColor = "#FF4469";
@@ -58,6 +60,7 @@ public class HomeFragment extends Fragment {
     SharedPreferences prefs2;
     SharedPreferences day_of_weeks_request_code;
     SharedPreferences dates_Alarm_Completed_Check;
+    SharedPreferences ALARM_History;
     HashSet<String> dayofweeks;
     HashSet Clicked;
     String YEAR_MONTH;
@@ -65,8 +68,18 @@ public class HomeFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.activity_yoram_home, container, false);
-
+        top_text = view.findViewById(R.id.top_text);
         timePicker = view.findViewById(R.id.timePicker);
+        if (ThemeUtil.modLoad(requireContext()).equals(ThemeUtil.DARK_MODE)){
+            int themeSurfaceColor = com.google.android.material.color.MaterialColors.getColor(
+                    timePicker, com.google.android.material.R.attr.colorSurface);
+            timePicker.setBackgroundColor(themeSurfaceColor);
+            top_text.setTextColor(Color.WHITE);
+        }else{
+            timePicker.setBackgroundColor(Color.WHITE);
+            top_text.setTextColor(Color.BLACK);
+        }
+
         button_Set_yoga = view.findViewById(R.id.buttonSetyoga);
         Log.d("홈 프레그먼트", "홈 프레그먼트");
         calendar = Calendar.getInstance();
@@ -75,12 +88,15 @@ public class HomeFragment extends Fragment {
 //        initializeDayButtons(view);
 
 //        restoreState();
+        ALARM_History = getContext().getSharedPreferences("ALARM_History", MODE_PRIVATE);
+
         day_of_weeks_request_code =  getContext().getSharedPreferences("day_of_weeks_request_code", MODE_PRIVATE);
         Check_Clicked_prefs = getContext().getSharedPreferences("Clicked", MODE_PRIVATE);
         dates_Alarm_Completed_Check = getContext().getSharedPreferences("Check_completed", MODE_PRIVATE);
 
 //        dates_Alarm_Completed_Check.edit().clear().apply();
 //        day_of_weeks_request_code.edit().clear().apply();
+//        ALARM_History.edit().clear().apply();
         Log.d("day_of_weeks_request_code", day_of_weeks_request_code.getAll().toString());
         Log.d("dates_Alarm_Completed_Check", dates_Alarm_Completed_Check.getAll().toString());
 
@@ -110,35 +126,14 @@ public class HomeFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+
         Clicked_button_info = new HashSet<>();
-//        dayofweeks = new HashSet<>();
-
-//        day_of_weeks_request_code.edit().clear().apply();
-
 
         for (int i = 1; i < 8; i++) {// 이부분이 prefs 참고해서 이전에 버튼 클릭여부에 따라 버튼 초기화 하는 부분인데 필요 없을듯
             dayButtons.put(i, view.findViewById(buttonIds[i - 1]));
             Log.d("daybuttons", String.valueOf(dayButtons));
             String key = String.valueOf(i);
 
-//            String value = Check_Clicked_prefs.getString(key, "-1");
-//            if (!"0".equals(value) &&
-//                    !"1".equals(value)){
-//                Check_Clicked_prefs.edit().putString(String.valueOf(i), "0").apply();
-//                dayButtons.get(i).setBackgroundTintList(ColorStateList.valueOf(Color.parseColor(offColor)));
-//
-//
-//            } else if ("0".equals(value)) {
-//                dayButtons.get(i).setBackgroundTintList(ColorStateList.valueOf(Color.parseColor(offColor)));
-//
-//
-//            }else{
-//                dayButtons.get(i).setBackgroundTintList(ColorStateList.valueOf(Color.parseColor(onColor)));
-//                HashSet tmpset = new HashSet(day_of_weeks_request_code.getStringSet("days", new HashSet<>()));
-//                tmpset.add(String.valueOf(i));
-//                Log.d("초기 알람 선택 요일", String.valueOf(tmpset));
-//                day_of_weeks_request_code.edit().putStringSet("days", tmpset).apply();
-//            }
         }
 
         prefs = getContext().getSharedPreferences("next_request_code", MODE_PRIVATE);

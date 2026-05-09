@@ -38,15 +38,13 @@ public class ThemeUtil {
         SharedPreferences sp = context.getSharedPreferences(MOD_PREFERENCES, Context.MODE_PRIVATE);
         return sp.getString("mod", "light");
     }
-    public static void toggleTheme(Context context) {
+    public static void toggleTheme(Context context, String Theme_mod) {
         // 현재 테마를 불러옴
         String savedMode = modLoad(context);
 
         // 현재 테마를 기반으로 토글
-        if (savedMode.equals(LIGHT_MODE)) {
-            savedMode = DARK_MODE;
-        } else {
-            savedMode = LIGHT_MODE;
+        if (!savedMode.equals(Theme_mod)) {
+            savedMode = Theme_mod;
         }
 
         // 변경된 테마 적용

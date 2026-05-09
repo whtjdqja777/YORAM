@@ -58,15 +58,20 @@ public class MypageFragment extends Fragment {
     private String mParam2;
     MaterialCalendarView calendarView;
     SharedPreferences day_of_week_prefs;
+    SharedPreferences day_compledted;
+    SharedPreferences ALARM_History;
     Decorator REDdecorator;
     Decorator ORANGEdecorator;
     Decorator GREENdecorator;
     Collection<CalendarDay> dates;
 
-    SharedPreferences day_compledted;
+    TextView explain_tv1;
+    TextView explain_tv2;
+
     Calendar calendar;
     String YEAR_MONTH;
     TextView trueday_count;
+    JSONObject Alarm_time_obj;
     public MypageFragment() {
         // Required empty public constructor
     }
@@ -101,6 +106,7 @@ public class MypageFragment extends Fragment {
 //        decorator = new Decorator()
 
         calendar = Calendar.getInstance();
+        ALARM_History = getContext().getSharedPreferences("ALARM_History", MODE_PRIVATE);
         day_compledted = getContext().getSharedPreferences("Check_completed", MODE_PRIVATE);
 //        YEAR_MONTH = String.valueOf(calendar.get(Calendar.YEAR)) + "_" + String.valueOf(calendar.get(Calendar.MONTH));
 
@@ -117,13 +123,28 @@ public class MypageFragment extends Fragment {
 
         super.onViewCreated(view, savedInstanceState);
 
+        String currentTheme = ThemeUtil.modLoad(requireContext());
+        explain_tv1 = view.findViewById(R.id.explain_tv1);
+        explain_tv2 = view.findViewById(R.id.explain_tv2);
+        calendarView = view.findViewById(R.id.calendarView);
+        calendarView.setDateTextAppearance(android.R.style.TextAppearance_DeviceDefault_Small);
+        if (currentTheme.equals(ThemeUtil.DARK_MODE)){
+            explain_tv1.setTextColor(Color.WHITE);
+            explain_tv2.setTextColor(Color.WHITE);
 
+//            calendarView.setDateTextAppearance(R.style.CalendarDateDark);
+        }else{
+            explain_tv1.setTextColor(Color.BLACK);
+            explain_tv2.setTextColor(Color.BLACK);
+
+//            calendarView.setDateTextAppearance(R.style.CalendarDateLight);
+        }
 
 
 
 
         day_of_week_prefs = getActivity().getSharedPreferences("day_of_weeks_request_code", MODE_PRIVATE);
-        calendarView = view.findViewById(R.id.calendarView);
+
         try {
             if(calendarView != null)
                 for(String YEAR_MONTH : day_compledted.getAll().keySet()){
@@ -231,7 +252,7 @@ public class MypageFragment extends Fragment {
         trueday_count.setText(String.valueOf(GREENCount));
         ProgressBar pb = getActivity().findViewById(R.id.progress_bar);
         TextView progressTextview = getActivity().findViewById(R.id.progress_tv);
-        int progress = (totaltrue_count*100) / thismonth_alarm_count;
+        int progress = (thismonth_alarm_count == 0) ? 0: (totaltrue_count*100) / thismonth_alarm_count;
 
         progressTextview.setText("진행도: " + progress + "%" + thismonth_alarm_count + "개 중" +totaltrue_count + "개 수행 했습니다!");
         pb.setProgress(progress);
@@ -260,7 +281,10 @@ public class MypageFragment extends Fragment {
                 String Alarm_info ="";
                 int True_Count = 0;
                 int Alarm_count = 0;
-
+                Log.d("day_of_week_requestcode", String.valueOf(day_of_week_prefs.getAll()));
+                Log.d("day_compledted", String.valueOf(day_compledted.getAll()));
+                Log.d("ALARM_History_row", String.valueOf(ALARM_History.getAll()));
+                //여기에 삭제된 알람 들어 있는거 확인
 
                 if(day_compledted.contains(YEAR_MONTH)){
                     Set<String> Alarm_days = day_compledted.getStringSet(YEAR_MONTH, new HashSet<>());
@@ -270,17 +294,19 @@ public class MypageFragment extends Fragment {
                     for (String JSONString : Alarm_days){
                         try {
                             JSONObject Alarm_days_Object = new JSONObject(JSONString);
-                            if (Alarm_days_Object.has(String.valueOf(date.getDay()))){
+                            if (Alarm_days_Object.has(String.valueOf(date.getDay())) ){
                                 JSONObject day_Object = (JSONObject) Alarm_days_Object.get(String.valueOf(date.getDay()));
                                 Iterator<String> request_code_keys = day_Object.keys();
-
-                                JSONObject day_Alarms_obj = get_Alarm_info(date);
+                                //Check_completed에 있는 requestcode로 history도 검색 가능
+                                JSONObject day_Alarms_obj = get_Alarm_info(date);//
+                                // 알람 시간 정보를 day_of_week_request하고 History 2곳에서 다 가져와야됌
                                 if(day_Alarms_obj == null){
                                     Log.e("day_Alarms_obj null", "day_Alarms_obj null입니다.");
-                                    return;
+                                    day_Alarms_obj = new JSONObject();
+
+                                }else{
+
                                 }
-                                Alarm_count = day_Object.length();
-                                Log.d("day_Alarms_obj: ", String.valueOf(day_Alarms_obj));
 
 
                                 while(request_code_keys.hasNext()){
@@ -290,13 +316,32 @@ public class MypageFragment extends Fragment {
                                     //따로 빼서 여기서 쓰는게 편할 듯
 
 //                                    Log.d("")
-                                    JSONObject Alarm_time_obj = (JSONObject) day_Alarms_obj.get(requestcode_key);// 여기서 터짐
+
+                                    //이거 삭제된 알람 정보에 대해서는 검색할 수가 없기 때문에 No Value 오류뜸
+                                    Log.d("ALARM_Historys: ", String.valueOf(ALARM_History.getAll()));
+                                    if(day_Alarms_obj.has(requestcode_key)){
+                                        Alarm_time_obj = (JSONObject) day_Alarms_obj.get(requestcode_key);
+                                        Log.d("ALARM_History", "exist in day_of_week_request_code: "+ALARM_History.getString(requestcode_key,""));
+                                        Alarm_count ++;
+                                    }else if(ALARM_History.contains(requestcode_key)){
+
+                                        Alarm_time_obj = new JSONObject(ALARM_History.getString(requestcode_key,""));
+                                        Log.d("ALARM_History", "exis int ALARM_History: "+ALARM_History.getString(requestcode_key,""));
+                                        //오늘이 안끝났는데 delete해 버리면 오늘은 아직 알람 삭제가 가능한 상태라
+                                        //day_of_week_request_code 뿐만 아니라 Check_completed의 기록도 지워져서
+                                        //삭제 했을때 날짜 눌러도 오늘 날짜에는 팝업 창 안뜸
+                                        Alarm_count ++;
+                                    }else{
+                                        Log.d("Non exist", "알람 목록, 히스토리 두 곳다 없음");
+                                        continue;
+                                    }
+
                                     Log.d("Alarm_time_obj: ", String.valueOf(Alarm_time_obj));
                                     if (day_Object.get(requestcode_key).equals(true)){
                                         True_Count++;
-                                        Alarm_info += Alarm_time_obj.get("Hour") + "시" + Alarm_time_obj.get("Minute") + "분" + " 알람" + "  V\n";
+                                        Alarm_info += Alarm_time_obj.optString("Hour") + "시" + Alarm_time_obj.optString("Minute") + "분" + " 알람" + "  V\n";
                                     }else{
-                                        Alarm_info += Alarm_time_obj.get("Hour") + "시" + Alarm_time_obj.get("Minute") + "분" + " 알람" + "  X\n";
+                                        Alarm_info += Alarm_time_obj.optString("Hour") + "시" + Alarm_time_obj.optString("Minute") + "분" + " 알람" + "  X\n";
                                     }
                                 }
                                 Toast.makeText(getContext(), "진행도: " + True_Count + "/" + Alarm_count, Toast.LENGTH_SHORT).show();
@@ -307,6 +352,8 @@ public class MypageFragment extends Fragment {
                             throw new RuntimeException(e);
                         }
                     }
+                    Log.d("Alarm_info", Alarm_info);
+                    Log.d("Alarm_count", String.valueOf(Alarm_count));
                     if (!Alarm_info.isEmpty() && Alarm_count !=0){
                         MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(requireContext());
                         builder.setTitle(date.getYear() + "년 " + date.getMonth() + "월 " + date.getDay() + "일 " + "알람 정보");

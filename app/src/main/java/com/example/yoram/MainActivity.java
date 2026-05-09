@@ -49,6 +49,7 @@ public class MainActivity extends AppCompatActivity{
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        ThemeUtil.applyTheme(ThemeUtil.modLoad(this));
         prefs = getSharedPreferences("yoga", MODE_PRIVATE);
         prefs.edit().remove("pose").apply();
         // 첫 시작 여부 확인

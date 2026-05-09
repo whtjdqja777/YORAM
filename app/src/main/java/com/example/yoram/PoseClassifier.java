@@ -3,27 +3,46 @@ package com.example.yoram;
 
 
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.util.Log;
-
-import androidx.camera.core.ImageProxy;
 
 import com.google.mediapipe.framework.image.MPImage;
 import com.google.mediapipe.tasks.components.containers.NormalizedLandmark;
 import com.google.mediapipe.tasks.vision.core.ImageProcessingOptions;
+import com.google.mediapipe.tasks.vision.core.RunningMode;
 import com.google.mediapipe.tasks.vision.poselandmarker.PoseLandmarkerResult;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Set;
 
 public class PoseClassifier implements MideaPipePosepredict.PoseLandmarkerListener{
     MideaPipePosepredict mideaPipePosepredict;
+    PoseLandmarkerResult results = null;
+    int ImageWidth = 1;
+    int ImageHeight = 1;
+    Set<Integer> Correct_landmark_index = new HashSet<>();
+    Set<Integer> Incorrect_landmark_index = new HashSet<>();
+    RunningMode runningMode = null;
 
+    private static final List<Integer> LEFT_ARM = Arrays.asList(11, 13, 15);
+    private static final List<Integer> RIGHT_ARM = Arrays.asList(12, 14, 16);
+    private static final List<Integer> LEFT_LEG = Arrays.asList(23, 25, 27);
+    private static final List<Integer> RIGHT_LEG = Arrays.asList(24, 26, 28);
+    private static final List<Integer> LEFT_WHOLE_BODY = Arrays.asList(11, 23, 25);
+    private static final List<Integer> RIGHT_WHOLE_BODY = Arrays.asList(12, 24, 26);
+    private  List<Integer> FOR_BACK_LANDMARKS = new ArrayList<>();
+    private  List<Integer> COBRA_WHOLE_BODY_LAND_MARKS = new ArrayList<>();
+    private  List<Integer> COBRA_ARM_LAND_MARKS = new ArrayList<>();
+    private  List<Integer> COBRA_LEG_LAND_MARKS = new ArrayList<>();
+    public interface PoseSkeletonInfoListener{
+        void onResult(PoseLandmarkerResult result, int imageWidth, int imageHeight, Set<Integer> Correct_landmark_index, Set<Integer> Incorrect_landmark_index, RunningMode runningMode);
+
+    }
+    private  PoseSkeletonInfoListener sklistener;
     public static LinkedHashMap<Integer, String> mappingindex = new LinkedHashMap<>();
     static{
         mappingindex.put(11, "왼쪽 어께");
@@ -188,10 +207,11 @@ public class PoseClassifier implements MideaPipePosepredict.PoseLandmarkerListen
         // return
     }
     @Override
-    public void onResult(PoseLandmarkerResult result, int imageWidth, int imageHeight) {
+    public void onResult(PoseLandmarkerResult result, int imageWidth, int imageHeight, RunningMode runningMode) {
         Log.d("결과 수신: ", String.valueOf(result));
         Log.d("이미지 가로: ", String.valueOf(imageWidth));
         Log.d("이미지 세로: ", String.valueOf(imageHeight));
+
         Boolean Calculate_result = false;
         if (result.landmarks().size() > 0){
             landmarks = result.landmarks().get(0);
@@ -253,6 +273,7 @@ public class PoseClassifier implements MideaPipePosepredict.PoseLandmarkerListen
 
 //        Log.d("상체 왼쪽 어께, 팔꿈치, 손목 각도", String.valueOf(upper_left_shoulder_to_wrist_angle));
 
+        sklistener.onResult(result, imageWidth, imageHeight, Correct_landmark_index, Incorrect_landmark_index, runningMode);
     }
 
     @Override
@@ -283,6 +304,8 @@ public class PoseClassifier implements MideaPipePosepredict.PoseLandmarkerListen
     }
 
     public Boolean WarriorAllAngleCalculate(List<NormalizedLandmark> landmarks){
+        Correct_landmark_index.clear();
+        Incorrect_landmark_index.clear();
         upper_left_shoulder_to_wrist_angle = CalculateAngle(
                 landmarks.get(11).x(),
                 landmarks.get(11).y(),
@@ -322,29 +345,74 @@ public class PoseClassifier implements MideaPipePosepredict.PoseLandmarkerListen
         AllAngles.get("하체 각도").add(lower_right_hip_to_ankle_angle);
         double small_leg_angle = Math.max(lower_left_hip_to_ankle_angle, lower_right_hip_to_ankle_angle);
         double big_leg_angle = Math.min(lower_left_hip_to_ankle_angle, lower_right_hip_to_ankle_angle);
-        boolean upperresult;
-        boolean lowerresult;
-        
+        boolean upperleftresult;
+        boolean upperrightresult;
+        boolean lowerbigresult;
+        boolean lowersmallresult;
+
+        ArrayList<Integer> big_leg_index = new ArrayList<>();
+        ArrayList<Integer> small_leg_index = new ArrayList<>();
+        if(lower_left_hip_to_ankle_angle > lower_right_hip_to_ankle_angle){
+            big_leg_index.addAll(Arrays.asList(23, 25, 27));
+            small_leg_index.addAll(Arrays.asList(24, 26, 28));
+        }else{
+            big_leg_index.addAll(Arrays.asList(24, 26, 28));
+            small_leg_index.addAll(Arrays.asList(23, 25, 27));
+        }
+
+
         if (WarriorCriterion.get("warrior").get("상체").get("최소") <= upper_left_shoulder_to_wrist_angle &&
                 upper_left_shoulder_to_wrist_angle <= WarriorCriterion.get("warrior").get("상체").get("최대")){
-            upperresult = true;
+            Correct_landmark_index.addAll(LEFT_ARM);
+
+            upperleftresult = true;
             Log.d("상체 통과", "왼쪽 팔 " + String.valueOf(upper_left_shoulder_to_wrist_angle)
-            + "오른쪽 팔" + String.valueOf(upper_right_shoulder_to_wrist_angle));
-        }else upperresult = false;
+            );
+        }else {
+            Incorrect_landmark_index.addAll(LEFT_ARM);
+            upperleftresult = false;
+        }
+
+
+        if (WarriorCriterion.get("warrior").get("상체").get("최소") <= upper_right_shoulder_to_wrist_angle &&
+                upper_right_shoulder_to_wrist_angle <= WarriorCriterion.get("warrior").get("상체").get("최대")){
+            Correct_landmark_index.addAll(RIGHT_ARM);
+
+            upperrightresult = true;
+            Log.d("상체 통과", "왼쪽 팔 " + String.valueOf(upper_left_shoulder_to_wrist_angle)
+                    + "오른쪽 팔" + String.valueOf(upper_right_shoulder_to_wrist_angle));
+        }else {
+            Incorrect_landmark_index.addAll(RIGHT_ARM);
+            upperrightresult = false;
+        }
+
 
         if(WarriorCriterion.get("warrior").get("하체").get("큰 각도 최소") <= big_leg_angle
-        && big_leg_angle <= WarriorCriterion.get("warrior").get("하체").get("큰 각도 최대")
-        && WarriorCriterion.get("warrior").get("하체").get("작은 각도 최소") <= small_leg_angle
+        && big_leg_angle <= WarriorCriterion.get("warrior").get("하체").get("큰 각도 최대")){
+            Log.d("큰쪽 하체 통과", "큰쪽 다리 " + String.valueOf(big_leg_angle));
+            Correct_landmark_index.addAll(big_leg_index);
+
+            lowerbigresult = true;
+        }else {
+
+            Log.d("큰쪽 하체 불통", "큰쪽 다리 " + String.valueOf(big_leg_angle) );
+            Incorrect_landmark_index.addAll(big_leg_index);
+            lowerbigresult = false;
+        }
+
+        if(WarriorCriterion.get("warrior").get("하체").get("작은 각도 최소") <= small_leg_angle
         && small_leg_angle <= WarriorCriterion.get("warrior").get("하체").get("작은 각도 최대")){
 
-            Log.d("하체 통과", "큰쪽 다리 " + String.valueOf(big_leg_angle)
-                    + "작은쪽 다리" + String.valueOf(small_leg_angle));
-            lowerresult = true;
-        }else {Log.d("하체 불통", "큰쪽 다리 " + String.valueOf(big_leg_angle) + "작은 쪽 다리" +
-                String.valueOf(small_leg_angle));
-                lowerresult = false;}
-        
-        if (upperresult && lowerresult){
+            Log.d("작은쪽 하체 통과", "작은쪽 다리" + String.valueOf(small_leg_angle));
+            Correct_landmark_index.addAll(small_leg_index);
+            lowersmallresult = true;
+        }else {
+            Log.d("작은쪽 불통", "작은 쪽 다리" + String.valueOf(small_leg_angle));
+            Incorrect_landmark_index.addAll(small_leg_index);
+            lowersmallresult = false;
+        }
+
+        if (upperrightresult && upperleftresult && lowerbigresult && lowersmallresult){
             return true;
         }else return false;
 
@@ -397,10 +465,11 @@ public class PoseClassifier implements MideaPipePosepredict.PoseLandmarkerListen
         // 무릎 골반 위치 계산
         // 필요 랜드마크: 23,24,25,26
         // 지세 방향 별 랜드마크 필터링 (left or right)
+        Correct_landmark_index.clear();
+        Incorrect_landmark_index.clear();
+        FOR_BACK_LANDMARKS.clear();
 
-        ArrayList<Integer> LeftPosenum = new ArrayList<>(Arrays.asList(23, 25, 27));
-        ArrayList<Integer> RightPosenum = new ArrayList<>(Arrays.asList(24, 26, 28));
-        Boolean Selectpoint = getSelectPoint(LeftPosenum, RightPosenum);
+        Boolean Selectpoint = getSelectPoint(LEFT_LEG, RIGHT_LEG);
 
 
         float for_back_angle_result;
@@ -421,11 +490,7 @@ public class PoseClassifier implements MideaPipePosepredict.PoseLandmarkerListen
 
             // (무릎 - 골반) / (발목 - 골반) 비율
             ratio_result = Math.abs(left_knee_x - left_hip_x) / Math.abs(left_ankle_x - left_hip_x);
-//            hip_knee.get("골반").add(left_hip_x);
-//            hip_knee.get("무릎").add(left_knee_x);
-//            hip_knee.get("발목").add(left_ankle_x);
-//            hip_knee.get("비율").add(ratio_result);
-//            for_back_angle_list.add(for_back_angle);
+            FOR_BACK_LANDMARKS.addAll(LEFT_LEG);
 
         }else{
             float right_hip_x =landmarks.get(24).x();
@@ -435,34 +500,45 @@ public class PoseClassifier implements MideaPipePosepredict.PoseLandmarkerListen
             float right_ankle_x = landmarks.get(28).x();
             float right_ankle_y = landmarks.get(28).y();
             for_back_angle_result = CalculateAngle(right_hip_x, right_hip_y, right_knee_x, right_knee_y,right_ankle_x,right_ankle_y);
+
             Log.d("for_back_angle", String.valueOf(for_back_angle_result));
             // 골반-무릅 위치
             ratio_result = Math.abs(right_knee_x - right_hip_x) / Math.abs(right_ankle_x - right_hip_x);
             Log.d("ratio_result", String.valueOf(ratio_result));
-//            hip_knee.get("골반").add(right_hip_x);
-//            hip_knee.get("무릎").add(right_knee_x);
-//            hip_knee.get("발목").add(right_ankle_x);
-//            hip_knee.get("비율").add(ratio_result);
-//            for_back_angle_list.add(for_back_angle);
 
+            FOR_BACK_LANDMARKS.addAll(RIGHT_LEG);
 
         }
+
+        boolean Angle_result = false;
+        boolean Ratio_result = false;
         if (For_Back_Criterion.get("angle").get("min_range") <= for_back_angle_result &&
-                 for_back_angle_result<= For_Back_Criterion.get("angle").get("max_range") &&
-        For_Back_Criterion.get("ratio").get("min_range") <= ratio_result &&
+                 for_back_angle_result<= For_Back_Criterion.get("angle").get("max_range") ){
+            Log.d("각도 통과", "각도 통과");
+
+            Correct_landmark_index.addAll(FOR_BACK_LANDMARKS);
+
+            Angle_result = true;
+        }else{
+
+            Incorrect_landmark_index.addAll(FOR_BACK_LANDMARKS);
+
+            Angle_result = false;
+        }
+
+        if(For_Back_Criterion.get("ratio").get("min_range") <= ratio_result &&
         ratio_result <= For_Back_Criterion.get("ratio").get("max_range")){
             Log.d("통과", "각도 비율 통과");
-            return true;
-        }else if(for_back_angle_result < For_Back_Criterion.get("angle").get("min_range") ||
-        for_back_angle_result > For_Back_Criterion.get("angle").get("max_range")) {
-            Log.d("불통", "각도 불통");
-            return false;
-        }else {
-            Log.d("불통", "비율 불통(비율의 오류율이 높아 통과 시킴)");
-            return true;
+            Ratio_result = true;
+        }else{
+            Ratio_result =  true; //비율 불통 오류율이 높아 일단 true return
         }
 
-
+        if (Angle_result && Ratio_result){
+            return true;
+        }else{
+            return false;
+        }
 
     }
     private Boolean Check_Cobra(List<NormalizedLandmark> landmarks){
@@ -481,6 +557,11 @@ public class PoseClassifier implements MideaPipePosepredict.PoseLandmarkerListen
         float Whole_body_Angle;
         float Arm_Angle;
         float Lower_Angle;
+        Correct_landmark_index.clear();
+        Incorrect_landmark_index.clear();
+        COBRA_WHOLE_BODY_LAND_MARKS.clear();
+        COBRA_ARM_LAND_MARKS.clear();
+        COBRA_LEG_LAND_MARKS.clear();
         if (Selectpoint){// 렌드마커별 visibility 보고 안내를 줄지, 그냥 통과를 시킬지 -> 지금 몸 전체 각도, 팔 각도, 하체 각도 하나라도 만족 못하면 통과가 안됨
             //그리고 코브라자세를 했을때 세로 화면에서는 다리쪽이 짤리는경우가 많음 -> 가로화면으로 테스트도 필요
             // 이건 내일 거실에서 테스트 ㄱㄱ
@@ -495,7 +576,9 @@ public class PoseClassifier implements MideaPipePosepredict.PoseLandmarkerListen
                     landmarks.get(25).x(), landmarks.get(25).y(),
                     landmarks.get(27).x(), landmarks.get(27).y());
 
-
+            COBRA_WHOLE_BODY_LAND_MARKS.addAll(LEFT_WHOLE_BODY);
+            COBRA_ARM_LAND_MARKS.addAll(LEFT_ARM);
+            COBRA_LEG_LAND_MARKS.addAll(LEFT_LEG);
         }else {
             Whole_body_Angle = CalculateAngle(landmarks.get(12).x(), landmarks.get(12).y(),
                     landmarks.get(24).x(), landmarks.get(24).y(),
@@ -506,6 +589,9 @@ public class PoseClassifier implements MideaPipePosepredict.PoseLandmarkerListen
             Lower_Angle = CalculateAngle(landmarks.get(24).x(), landmarks.get(24).y(),
                     landmarks.get(26).x(), landmarks.get(26).y(),
                     landmarks.get(28).x(), landmarks.get(28).y());
+            COBRA_WHOLE_BODY_LAND_MARKS.addAll(RIGHT_WHOLE_BODY);
+            COBRA_ARM_LAND_MARKS.addAll(RIGHT_ARM);
+            COBRA_LEG_LAND_MARKS.addAll(RIGHT_ARM);
         }
         Log.d("Whole_body_Angle", String.valueOf(Whole_body_Angle));
         Log.d("Arm_Angle", String.valueOf(Arm_Angle));
@@ -515,19 +601,51 @@ public class PoseClassifier implements MideaPipePosepredict.PoseLandmarkerListen
         Cobra_Angle_HashMap.get("Arm_Angle").add(Arm_Angle);
         Cobra_Angle_HashMap.get("Lower_Angle").add(Lower_Angle);
 
+        boolean Whole_body_Angle_result = false;
+        boolean Arm_Angle_result = false;
+        boolean Lower_Angle_result = false;
+
         if (Cobra_Criterion.get("angle").get("Whole_body_Angle").get("min_range") <= Whole_body_Angle &&
-        Whole_body_Angle <= Cobra_Criterion.get("angle").get("Whole_body_Angle").get("max_range")&&
-        Cobra_Criterion.get("angle").get("Arm_Angle").get("min_range") <= Arm_Angle &&
-        Arm_Angle <= Cobra_Criterion.get("angle").get("Arm_Angle").get("max_range")&&
-        Cobra_Criterion.get("angle").get("Lower_Angle").get("min_range") <= Lower_Angle &&
-        Lower_Angle <= Cobra_Criterion.get("angle").get("Lower_Angle").get("max_range")){
-            Log.d("몸 전체, 팔, 하체 각도 통과", "통과");
-            return true;
-        }else {
-            Log.d("불통", "불통");
-            return false;
+        Whole_body_Angle <= Cobra_Criterion.get("angle").get("Whole_body_Angle").get("max_range")){
+            Log.d("몸 전체 각도 통과", "통과");
+            Correct_landmark_index.addAll(COBRA_ARM_LAND_MARKS);
+            Whole_body_Angle_result = true;
+
+        }else{
+            Log.d("몸 전체 각도 불통", "불통");
+            Incorrect_landmark_index.addAll(COBRA_ARM_LAND_MARKS);
+            Whole_body_Angle_result = false;
+
         }
 
+        if(Cobra_Criterion.get("angle").get("Arm_Angle").get("min_range") <= Arm_Angle &&
+        Arm_Angle <= Cobra_Criterion.get("angle").get("Arm_Angle").get("max_range")){
+            Log.d("팔 각도 통과", "통과");
+            Correct_landmark_index.addAll(COBRA_ARM_LAND_MARKS);
+            Arm_Angle_result = true;
+        }else{
+            Log.d("팔 각도 불통", "불통");
+            Incorrect_landmark_index.addAll(COBRA_ARM_LAND_MARKS);
+            Arm_Angle_result = false;
+
+        }
+
+        if(Cobra_Criterion.get("angle").get("Lower_Angle").get("min_range") <= Lower_Angle &&
+        Lower_Angle <= Cobra_Criterion.get("angle").get("Lower_Angle").get("max_range")){
+            Log.d("하체 각도 통과", "통과");
+            Correct_landmark_index.addAll(COBRA_LEG_LAND_MARKS);
+            Lower_Angle_result = true;
+        }else {
+            Log.d("하체 각도 불통", "불통");
+            Incorrect_landmark_index.addAll(COBRA_LEG_LAND_MARKS);
+            Lower_Angle_result = false;
+        }
+
+        if (Whole_body_Angle_result && Arm_Angle_result && Lower_Angle_result){
+            return true;
+        }else{
+            return false;
+        }
     }
 
     private Boolean Cobra_hip_ratio(List<NormalizedLandmark> landmarks, Boolean Selectpoint){
@@ -561,7 +679,7 @@ public class PoseClassifier implements MideaPipePosepredict.PoseLandmarkerListen
         }
     }
 
-    private Boolean getSelectPoint(ArrayList<Integer> LeftPosenum, ArrayList<Integer> RightPosenum){
+    private Boolean getSelectPoint(List<Integer> LeftPosenum, List<Integer> RightPosenum){
         float Left_Visibility = 0;
         float Right_Visibility = 0;
         Boolean Selectpoint = false;
@@ -582,4 +700,12 @@ public class PoseClassifier implements MideaPipePosepredict.PoseLandmarkerListen
     public void setpose(String pose){
         this.Current_pose = pose;
     }
+    public void setListener(PoseSkeletonInfoListener listener){
+        this.sklistener = listener;
+    }
+
+    public void close(){
+        mideaPipePosepredict.close();
+    }
+
 }
