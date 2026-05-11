@@ -14,6 +14,8 @@ import com.google.mediapipe.tasks.vision.objectdetector.ObjectDetectorResult;
 import com.google.mediapipe.tasks.vision.poselandmarker.PoseLandmarker;
 import com.google.mediapipe.tasks.vision.poselandmarker.PoseLandmarkerResult;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -29,6 +31,9 @@ public class MideaPipePosepredict {
     private static final int MODEL_FULL = 1;
     private static final int MODEL_HEAVY = 2;
 
+    ArrayList<Long> detect_time = new ArrayList<>();
+    long detect_start_time;
+    long detect_end_time;
 
     private static final Map<Integer, String> MODEL_NAMES = new HashMap<Integer, String>();
     static {
@@ -74,7 +79,11 @@ public class MideaPipePosepredict {
                 .setMinPosePresenceConfidence(0.5f)// 검출된 자세가 실제로 존재한다는 최소 신뢰도
                 .setMinTrackingConfidence(0.5f) // 이전 프레임들 참고한 tracking 정보를 활용한 신뢰도
                 .setResultListener((result, inputImage) -> {
+                    detect_end_time = System.nanoTime();
+                    detect_time.add(detect_end_time - detect_start_time);
+
                     listener.onResult(result, inputImage.getWidth(), inputImage.getHeight(), RunningMode.LIVE_STREAM);
+
                 })
                 .setErrorListener(error -> {
                     listener.onError(error.getMessage() != null ? error.getMessage():"알 수 없는 에러");
@@ -102,6 +111,7 @@ public class MideaPipePosepredict {
 //        poseLandmarker.detectAsync(mpImage, frametime);// 스트림 데이터 탐지
         try{
             if (poseLandmarker != null){
+                detect_start_time = System.nanoTime();
                 poseLandmarker.detectAsync(mpImage, options, SystemClock.uptimeMillis());
             }
 
@@ -115,6 +125,18 @@ public class MideaPipePosepredict {
     }
 
     public void close(){
+        long total_result = 0;
+
+        for (long detect_Nano : detect_time){
+            total_result += detect_Nano;
+        }
+        double average_detect_mill = (double) total_result / detect_time.size();
+        double max_detect_mill = Collections.max(detect_time);
+        double min_detect_mill = Collections.min(detect_time);
+
+        Log.d("추론 평균 시간", String.format("%.4f", average_detect_mill));
+        Log.d("추론 최대 시간", String.format("%.4f", max_detect_mill));
+        Log.d("추론 최소 시간", String.format("%.4f", min_detect_mill));
         if (poseLandmarker != null){
             poseLandmarker.close();
             poseLandmarker = null;

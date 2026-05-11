@@ -49,7 +49,10 @@ import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
@@ -61,6 +64,9 @@ public class YogaActivity extends AppCompatActivity {
     private long lastAnalyzedTimestamp = 0;
     private int imageSize = 224;
     private String targetPoseName = "stand"; // 목표 요가 자세 이름
+    private ArrayList<Long> preprocessing_time = new ArrayList<>();
+    private long preprocessing_time_start;
+    private long preprocessing_time_end;
 
     YogaViewModel yogaViewModel;
     int current_yoga_id = 0;
@@ -144,10 +150,12 @@ public class YogaActivity extends AppCompatActivity {
                     image.close();
                     return;
                 }
-
+                preprocessing_time_start = System.nanoTime();
                 mpImage = new MediaImageBuilder(MediaImage).build();
                 options = ImageProcessingOptions.builder().setRotationDegrees(image.getImageInfo().getRotationDegrees()).build();
 //                Log.d("image 각도", String.valueOf(image.getImageInfo().getRotationDegrees()));
+                preprocessing_time_end = System.nanoTime();
+                preprocessing_time.add(preprocessing_time_end - preprocessing_time_start);
                 poseClassifier.run(mpImage, options);
                 rotation = image.getImageInfo().getRotationDegrees();
 
@@ -375,6 +383,24 @@ public class YogaActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+
+        if (!preprocessing_time.isEmpty()){
+            long total_nano_result = 0;
+            for (long time : preprocessing_time){
+                total_nano_result += time;
+            }
+            long averageNano = total_nano_result/preprocessing_time.size();
+            double maxNano = Collections.max(preprocessing_time)/1000000.0;
+            double minNano = Collections.min(preprocessing_time)/1000000.0;
+
+            double average_mill = averageNano/1000000.0;
+            Log.d("전처리 평균 나노초", String.valueOf(averageNano));
+            Log.d("전처리 평균 밀리초",String.valueOf(average_mill));
+            Log.d("전처리 최대 밀리초", String.valueOf(maxNano));
+            Log.d("전처리 최소 밀리초", String.valueOf(minNano));
+
+        }
+
         if (cameraProvider != null) {
             cameraProvider.unbindAll();
         }

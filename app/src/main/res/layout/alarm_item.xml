@@ -25,7 +25,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="end"
-            android:text="삭제" />
+            android:text="삭제"
+            android:backgroundTint="@color/cancle_red"/>
 
     </LinearLayout>
 

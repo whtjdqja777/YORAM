@@ -67,6 +67,7 @@ public class AlarmAdapter extends RecyclerView.Adapter<AlarmAdapter.AlarmViewHol
         public AlarmViewHolder(@NonNull View itemView) {
             super(itemView);
             delete_button = itemView.findViewById(R.id.delete_button);
+
             date_id = itemView.findViewById(R.id.date_id);
         }
     }

@@ -8,6 +8,8 @@
     <color name="darkgray">#37474F</color>
     <color name="light_orange">#FFC482</color>
     <color name="crimson">#FF4469</color>
-    <color name="dark_primary">#FF000000</color> <!-- 검은색 -->
-    <color name="white_primary">#FFFFFFFF</color> <!-- 흰색 -->
+    <color name="dark_primary">#FF000000</color>
+    <color name="white_primary">#FFFFFFFF</color>
+    <color name="cancle_red">#E92525</color>
+
 </resources>

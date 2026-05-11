@@ -114,6 +114,8 @@ public class PoseClassifier implements MideaPipePosepredict.PoseLandmarkerListen
 
     private String Current_pose = "";
     ImageProcessingOptions options;
+
+
     public PoseClassifier(Context context){
         this.context = context;
         mideaPipePosepredict = new MideaPipePosepredict(context,this,2);
